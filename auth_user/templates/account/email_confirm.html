@@ -1,0 +1,32 @@
+{% extends "auth_base.html" %}
+{% load i18n %}
+{% load account %}
+
+{% block head_title %}{% trans "Confirm E-mail Address" %} | FinTune{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-6">
+        <h2 class="text-xl font-bold text-white">{% trans "Confirm E-mail Address" %}</h2>
+    </div>
+
+    {% if confirmation %}
+        {% user_display confirmation.email_address.user as user_display %}
+        
+        <p class="text-sm text-slate-400 mb-6 text-center">
+            {% blocktrans with confirmation.email_address.email as email %}Please confirm that <span class="text-white font-medium">{{ email }}</span> is an e-mail address for user <span class="text-white font-medium">{{ user_display }}</span>.{% endblocktrans %}
+        </p>
+
+        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-submit w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2">
+                <span>{% trans 'Confirm' %}</span>
+                <div class="spinner"></div>
+            </button>
+        </form>
+    {% else %}
+        {% url 'account_email' as email_url %}
+        <p class="text-sm text-slate-400 mb-6 text-center">
+            {% blocktrans %}This e-mail confirmation link expired or is invalid. Please <a href="{{ email_url }}" class="text-indigo-400 hover:text-indigo-300">issue a new e-mail confirmation request</a>.{% endblocktrans %}
+        </p>
+    {% endif %}
+{% endblock %}

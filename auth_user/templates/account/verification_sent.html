@@ -1,0 +1,19 @@
+{% extends "auth_base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Verify Your E-mail Address" %} | FinTune{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-6">
+        <h2 class="text-xl font-bold text-white">{% trans "Verify Your E-mail Address" %}</h2>
+        <p class="text-sm text-slate-400 mt-4">
+            {% blocktrans %}We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. Please contact us if you do not receive it within a few minutes.{% endblocktrans %}
+        </p>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'account_login' %}" class="w-full block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-900/20">
+            {% trans "Back to Sign In" %}
+        </a>
+    </div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FinTune{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-900 text-slate-200 antialiased">
+
+    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: false }">
+        
+        <!-- Sidebar -->
+        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-800 border-r border-slate-700 transition-transform duration-300 ease-in-out transform lg:static lg:translate-x-0"
+               :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}">
+            
+            <div class="flex items-center justify-center h-16 border-b border-slate-700">
+                <div class="flex items-center gap-2 font-bold text-xl text-white">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    FinTune
+                </div>
+            </div>
+
+            <nav class="p-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
+                <a href="{% url 'dashboard:home' %}" class="flex items-center gap-3 px-4 py-3 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors {% if request.resolver_match.view_name == 'dashboard:home' %}bg-slate-700 text-white{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    Dashboard
+                </a>
+                
+                <!-- Add more links here later -->
+                
+                <div class="pt-4 mt-4 border-t border-slate-700">
+                    <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg hover:bg-red-900/20 hover:text-red-400 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Sign Out
+                        </button>
+                    </form>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            <!-- Top Header (Mobile only menu button + User info) -->
+            <header class="flex items-center justify-between p-4 lg:hidden bg-slate-800 border-b border-slate-700">
+                <button @click="sidebarOpen = !sidebarOpen" class="text-slate-400 hover:text-white focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <div class="font-semibold text-white">FinTune</div>
+                <div class="w-6"></div> <!-- Spacer -->
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-900 p-4 md:p-8">
+                {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for message in messages %}
+                            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-900/30 text-red-400 border border-red-900/50{% elif message.tags == 'success' %}bg-green-900/30 text-green-400 border border-green-900/50{% else %}bg-slate-800 text-slate-300 border border-slate-700{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+
+        <!-- Overlay for mobile sidebar -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity 
+             class="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm lg:hidden"></div>
+    </div>
+
+    {% block extra_script %}{% endblock %}
+</body>
+</html>

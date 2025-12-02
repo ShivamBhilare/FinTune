@@ -1,0 +1,17 @@
+{% extends "auth_base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Account Inactive" %} | FinTune{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-6">
+        <h2 class="text-xl font-bold text-white">{% trans "Account Inactive" %}</h2>
+        <p class="text-sm text-slate-400 mt-4">{% trans "This account is inactive." %}</p>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'account_login' %}" class="w-full block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-900/20">
+            {% trans "Back to Sign In" %}
+        </a>
+    </div>
+{% endblock %}

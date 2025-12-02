@@ -1,0 +1,61 @@
+{% extends "auth_base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Sign Up" %} | FinTune{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-6">
+        <h2 class="text-xl font-bold text-white">{% trans "Create Account" %}</h2>
+        <p class="text-sm text-slate-400 mt-1">{% trans "Start your journey to financial freedom." %}</p>
+    </div>
+
+    <form id="signup-form" method="POST" action="{% url 'account_signup' %}" class="space-y-5">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div class="p-4 mb-4 text-sm text-red-400 rounded-lg bg-red-900/20 border border-red-900/50" role="alert">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-1">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="text-xs text-red-400 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button type="submit" class="btn-submit w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2">
+            <span>{% trans "Sign Up" %}</span>
+            <div class="spinner"></div>
+        </button>
+    </form>
+
+    <div class="mt-8 text-center text-sm text-slate-400">
+        <p class="mb-3">{% trans "Already have an account?" %}</p>
+
+        <div class="flex justify-center">
+            <a href="{% url 'account_login' %}"
+               class="px-6 py-2 bg-indigo-500 text-white text-sm font-semibold rounded-lg hover:bg-indigo-400 transition">
+                {% trans "Sign In" %}
+            </a>
+        </div>
+    </div>
+{% endblock %}
