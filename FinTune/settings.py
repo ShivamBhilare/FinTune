@@ -163,8 +163,13 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-LOGIN_REDIRECT_URL = '/'
+
+# CRITICAL CHANGE: Redirect to 'questionnaire' instead of '/'
+# This ensures users hit the onboarding logic immediately after login
+LOGIN_REDIRECT_URL = 'questionnaire'
 LOGOUT_REDIRECT_URL = '/'
 
 # Email Backend (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
