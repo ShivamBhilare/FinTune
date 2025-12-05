@@ -86,6 +86,12 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                    <input type="text" name="description" placeholder="Optional description..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
+                </div>
+
                 <button type="submit"
                     class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-3.5 rounded-xl transition-all shadow-lg mt-2 active:scale-95">
                     Save Transaction
@@ -97,19 +103,62 @@
 
                 <div x-show="previewData" class="w-full text-left bg-slate-900 p-4 rounded-xl border border-slate-700">
                     <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
-                    <div class="space-y-3 max-h-48 overflow-y-auto text-sm">
-                        <template x-for="(items, category) in previewData" :key="category">
-                            <div class="bg-slate-800 p-2 rounded border border-slate-700">
-                                <span class="text-yellow-400 font-bold text-xs uppercase" x-text="category"></span>
-                                <template x-for="item in items">
-                                    <div class="flex justify-between mt-1 text-slate-300">
-                                        <span x-text="item[0] + ' (' + item[2] + ')'"></span>
-                                        <span class="font-bold text-white" x-text="'₹' + item[1]"></span>
+                    <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
+                        <template x-for="(item, index) in previewData" :key="index">
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
+                                
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
+                                        <select x-model="item.category" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                            <option value="Housing">Housing</option>
+                                            <option value="Utilities">Utilities</option>
+                                            <option value="Food">Food</option>
+                                            <option value="Transportation">Transportation</option>
+                                            <option value="Healthcare">Healthcare</option>
+                                            <option value="Personal Care">Personal Care</option>
+                                            <option value="Entertainment">Entertainment</option>
+                                            <option value="Clothing & Apparel">Clothing & Apparel</option>
+                                            <option value="Groceries">Groceries</option>
+                                            <option value="Tax">Tax</option>
+                                            <option value="Other">Other</option>
+                                        </select>
                                     </div>
-                                </template>
+                                    <div class="w-24">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
+                                        <div class="relative">
+                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
+                                            <input type="number" step="0.01" x-model="item.amount" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
+                                        <input type="text" x-model="item.vendor" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
+                                        <input type="text" x-model="item.description" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    </div>
+                                </div>
+                                
+                                <div class="text-right">
+                                    <button @click="previewData.splice(index, 1)" class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
+                                        <i class="fas fa-trash mr-1"></i> Remove Item
+                                    </button>
+                                </div>
                             </div>
                         </template>
                     </div>
+                    
+                    <div class="mt-2 text-right">
+                         <button @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})" class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
+                            <i class="fas fa-plus mr-1"></i> Add Another Item
+                         </button>
+                    </div>
+
                     <div class="flex gap-2 mt-4">
                         <button @click="previewData = null"
                             class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
@@ -139,14 +188,16 @@
 
                     <div class="w-full bg-slate-900 p-3 mt-4 rounded-lg border border-slate-700 text-left relative">
                         <p class="text-xs text-slate-500 uppercase mb-1">Transcript</p>
-                        <p class="text-white text-sm italic pr-8 min-h-[40px]"
-                            x-text="transcript || 'Start speaking to record...'">Start speaking...</p>
+                        <textarea x-model="transcript" 
+                            placeholder="Start speaking into microphone or type details here..."
+                            class="w-full bg-transparent text-white text-sm italic pr-8 min-h-[80px] resize-none focus:outline-none placeholder-slate-600"
+                            :disabled="isListening"></textarea>
 
                         <button x-show="transcript.length > 5 && !isListening && !isLoading"
                             @click="processWithGemini()"
                             class="absolute bottom-2 right-2 text-green-400 hover:text-green-300 transition-colors p-2"
                             title="Process with AI">
-                            <i class="fas fa-magic text-lg"></i>
+                            <i class="fas fa-paper-plane text-lg"></i>
                         </button>
                         <div x-show="isLoading" class="absolute bottom-3 right-3 text-yellow-400 animate-spin">
                             <i class="fas fa-circle-notch"></i>
