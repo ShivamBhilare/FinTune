@@ -2,19 +2,11 @@
 <div x-show="transactionModalOpen" x-cloak style="display: none;" x-data="transactionModalHandler()"
     class="fixed inset-0 z-[60] flex items-center justify-center p-4">
 
-    <div x-show="transactionModalOpen" x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0" @click="transactionModalOpen = false"
-        class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    <div x-show="transactionModalOpen" @click="transactionModalOpen = false"
+        class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"></div>
 
-    <div x-show="transactionModalOpen" x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-        x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-        class="relative w-full max-w-lg bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div x-show="transactionModalOpen"
+        class="relative w-full max-w-lg bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
 
         <div class="flex items-center justify-between p-6 border-b border-slate-700">
             <h3 class="text-xl font-bold text-white">New Transaction</h3>
@@ -34,88 +26,133 @@
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
                 <i class="fas fa-microphone"></i> Voice
             </button>
-            <button @click="activeTab = 'image'"
-                :class="activeTab === 'image' ? 'bg-slate-700 text-yellow-400 border-slate-600' : 'text-slate-400 hover:text-white border-transparent'"
-                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
-                <i class="fas fa-camera"></i> Scan
-            </button>
         </div>
 
-        <div class="p-6">
+        <div class="p-6 overflow-y-auto">
 
-            <div x-show="activeTab === 'manual'" class="space-y-4">
+            <form action="{% url 'dashboard:add_manual' %}" method="POST" x-show="activeTab === 'manual'"
+                class="space-y-4">
+                {% csrf_token %}
+
+                <div class="flex gap-4 mb-2">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="type" value="EXPENSE" checked class="peer sr-only">
+                        <div
+                            class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-red-500/20 peer-checked:text-red-400 peer-checked:border-red-500 transition-all text-slate-400 font-bold text-sm">
+                            EXPENSE
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="type" value="INCOME" class="peer sr-only">
+                        <div
+                            class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-green-500/20 peer-checked:text-green-400 peer-checked:border-green-500 transition-all text-slate-400 font-bold text-sm">
+                            INCOME
+                        </div>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Vendor
+                        Name</label>
+                    <input type="text" name="vendor" required placeholder="e.g. Walmart"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Amount</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">₹</span>
-                        <input type="number" placeholder="0.00"
+                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-8 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
                     </div>
                 </div>
+
                 <div>
                     <label
                         class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Category</label>
-                    <select
+                    <select name="category"
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all appearance-none">
-                        <option>Food & Dining</option>
-                        <option>Transportation</option>
-                        <option>Shopping</option>
-                        <option>Bills & Utilities</option>
+                        <option value="Housing">Housing</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Food">Food</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Personal Care">Personal Care</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Clothing & Apparel">Clothing & Apparel</option>
+                        <option value="Groceries">Groceries</option>
+                        <option value="Tax">Tax</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
-                <div>
-                    <label
-                        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                    <input type="text" placeholder="What was this for?"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
-                </div>
-                <button
+
+                <button type="submit"
                     class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-3.5 rounded-xl transition-all shadow-lg mt-2 active:scale-95">
                     Save Transaction
                 </button>
-            </div>
+            </form>
 
             <div x-show="activeTab === 'voice'"
-                class="flex flex-col items-center justify-center py-8 space-y-6 text-center">
-                <div class="relative group cursor-pointer" @click="toggleListening()">
-                    <div class="absolute inset-0 bg-green-500/20 rounded-full group-hover:bg-green-500/30"
-                         :class="{'animate-ping': isListening}">
-                    </div>
-                    <div
-                        class="relative w-24 h-24 bg-slate-800 border-2 border-green-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-active:scale-95">
-                        <i class="fas fa-microphone text-4xl text-green-500" :class="{'text-white': isListening}"></i>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-white font-bold text-lg mb-1" x-text="isListening ? 'Tap to Stop' : 'Tap to Speak'">Tap to Speak</h4>
-                    <p class="text-slate-400 text-sm" x-text="isListening ? 'Listening...' : '&quot;Spent ₹15 at Starbucks for coffee&quot;'">"Spent ₹15 at Starbucks for coffee"</p>
-                </div>
-                <div class="w-full bg-slate-900 p-3 rounded-lg border border-slate-700 text-left relative">
-                    <p class="text-xs text-slate-500 uppercase mb-1">Transcript</p>
-                    <p class="text-white text-sm italic pr-8" x-text="transcript || (isListening ? 'Listening...' : 'Transcript will appear here...')">Listening...</p>
-                    <button class="absolute bottom-3 right-3 text-slate-400 hover:text-yellow-400 transition-colors" title="Process Transaction">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
+                class="flex flex-col items-center justify-center py-4 space-y-6 text-center">
 
-            <div x-show="activeTab === 'image'" class="space-y-4">
-                <div
-                    class="border-2 border-dashed border-slate-700 rounded-xl bg-slate-900 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-yellow-400 hover:bg-slate-800/50 transition-all group">
-                    <div
-                        class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-camera text-2xl text-yellow-400"></i>
+                <div x-show="previewData" class="w-full text-left bg-slate-900 p-4 rounded-xl border border-slate-700">
+                    <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
+                    <div class="space-y-3 max-h-48 overflow-y-auto text-sm">
+                        <template x-for="(items, category) in previewData" :key="category">
+                            <div class="bg-slate-800 p-2 rounded border border-slate-700">
+                                <span class="text-yellow-400 font-bold text-xs uppercase" x-text="category"></span>
+                                <template x-for="item in items">
+                                    <div class="flex justify-between mt-1 text-slate-300">
+                                        <span x-text="item[0] + ' (' + item[2] + ')'"></span>
+                                        <span class="font-bold text-white" x-text="'₹' + item[1]"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
-                    <h4 class="text-white font-bold mb-1">Scan Receipt</h4>
-                    <p class="text-slate-400 text-xs">Drag & drop or click to upload</p>
+                    <div class="flex gap-2 mt-4">
+                        <button @click="previewData = null"
+                            class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
+                        <button @click="confirmAndSave()"
+                            class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm
+                            & Save</button>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-xs text-slate-500">We'll extract the date, merchant, and total automatically.</p>
+
+                <div x-show="!previewData" class="w-full flex flex-col items-center">
+                    <div class="relative group cursor-pointer" @click="toggleListening()">
+                        <div class="absolute inset-0 bg-green-500/20 rounded-full group-hover:bg-green-500/30"
+                            :class="{'animate-ping': isListening}">
+                        </div>
+                        <div
+                            class="relative w-24 h-24 bg-slate-800 border-2 border-green-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-active:scale-95">
+                            <i class="fas fa-microphone text-4xl text-green-500"
+                                :class="{'text-white': isListening}"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="text-white font-bold text-lg mb-1"
+                            x-text="isListening ? 'Tap to Stop' : 'Tap to Speak'">Tap to Speak</h4>
+                        <p class="text-slate-400 text-sm" x-text="statusMessage">Ready</p>
+                    </div>
+
+                    <div class="w-full bg-slate-900 p-3 mt-4 rounded-lg border border-slate-700 text-left relative">
+                        <p class="text-xs text-slate-500 uppercase mb-1">Transcript</p>
+                        <p class="text-white text-sm italic pr-8 min-h-[40px]"
+                            x-text="transcript || 'Start speaking to record...'">Start speaking...</p>
+
+                        <button x-show="transcript.length > 5 && !isListening && !isLoading"
+                            @click="processWithGemini()"
+                            class="absolute bottom-2 right-2 text-green-400 hover:text-green-300 transition-colors p-2"
+                            title="Process with AI">
+                            <i class="fas fa-magic text-lg"></i>
+                        </button>
+                        <div x-show="isLoading" class="absolute bottom-3 right-3 text-yellow-400 animate-spin">
+                            <i class="fas fa-circle-notch"></i>
+                        </div>
+                    </div>
                 </div>
-                <button
-                    class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-3 rounded-xl transition-all">
-                    Select from Gallery
-                </button>
             </div>
 
         </div>
@@ -129,7 +166,9 @@
             isListening: false,
             transcript: '',
             recognition: null,
-            fullFinalTranscript: '',
+            previewData: null,
+            isLoading: false,
+            statusMessage: 'Ready to record',
 
             init() {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -139,52 +178,83 @@
                     this.recognition.interimResults = true;
 
                     this.recognition.onresult = (event) => {
-                        let interimTranscript = '';
-                        let eventFinalTranscript = '';
-
+                        let finalTranscript = '';
                         for (let i = event.resultIndex; i < event.results.length; ++i) {
                             if (event.results[i].isFinal) {
-                                eventFinalTranscript += event.results[i][0].transcript + ' ';
-                            } else {
-                                interimTranscript += event.results[i][0].transcript;
+                                finalTranscript += event.results[i][0].transcript;
                             }
                         }
-
-                        this.fullFinalTranscript += eventFinalTranscript;
-                        this.transcript = this.fullFinalTranscript + interimTranscript;
+                        if (finalTranscript) {
+                            this.transcript += finalTranscript + ' ';
+                        }
                     };
 
-                    this.recognition.onstart = () => {
-                        this.isListening = true;
-                    };
-
-                    this.recognition.onend = () => {
-                        this.isListening = false;
-                    };
-
-                    this.recognition.onerror = (event) => {
-                        console.error('Speech recognition error:', event.error);
-                        this.isListening = false;
-                    };
+                    this.recognition.onstart = () => { this.isListening = true; this.statusMessage = "Listening..."; };
+                    this.recognition.onend = () => { this.isListening = false; this.statusMessage = "Processing stopped."; };
                 }
             },
 
             toggleListening() {
-                if (!this.recognition) {
-                    this.init();
-                }
-                
-                if (!this.recognition) {
-                    alert('Speech Recognition is not supported in this browser.');
-                    return;
-                }
-
+                if (!this.recognition) return alert('Browser not supported');
                 if (this.isListening) {
                     this.recognition.stop();
                 } else {
-                    this.fullFinalTranscript = '';
                     this.transcript = '';
+                    this.previewData = null;
                     this.recognition.start();
+                }
+            },
+
+            async processWithGemini() {
+                if (!this.transcript) return;
+                this.isLoading = true;
+                this.statusMessage = "AI is analyzing...";
+
+                try {
+                    const response = await fetch("{% url 'dashboard:process_voice' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ transcript: this.transcript })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        this.previewData = result.data;
+                        this.statusMessage = "Review extraction below";
+                    } else {
+                        alert('Error processing: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Network error');
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            async confirmAndSave() {
+                this.isLoading = true;
+                try {
+                    const response = await fetch("{% url 'dashboard:save_confirmed' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ data: this.previewData })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        window.location.reload(); // Reload to show new data on dashboard
+                    } else {
+                        alert('Failed to save.');
+                    }
+                } catch (e) {
+                    alert('Error saving data');
                 }
             }
         }
