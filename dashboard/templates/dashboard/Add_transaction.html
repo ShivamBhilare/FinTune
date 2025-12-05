@@ -26,6 +26,11 @@
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
                 <i class="fas fa-microphone"></i> Voice
             </button>
+            <button @click="activeTab = 'image'"
+                :class="activeTab === 'image' ? 'bg-slate-700 text-blue-400 border-slate-600' : 'text-slate-400 hover:text-white border-transparent'"
+                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
+                <i class="fas fa-image"></i> Image
+            </button>
         </div>
 
         <div class="p-6 overflow-y-auto">
@@ -87,7 +92,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                    <label
+                        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
                     <input type="text" name="description" placeholder="Optional description..."
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
                 </div>
@@ -106,11 +112,13 @@
                     <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
                         <template x-for="(item, index) in previewData" :key="index">
                             <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
-                                
+
                                 <div class="flex gap-2">
                                     <div class="flex-1">
-                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
-                                        <select x-model="item.category" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
+                                        <select x-model="item.category"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                             <option value="Housing">Housing</option>
                                             <option value="Utilities">Utilities</option>
                                             <option value="Food">Food</option>
@@ -125,38 +133,48 @@
                                         </select>
                                     </div>
                                     <div class="w-24">
-                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
                                         <div class="relative">
-                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
-                                            <input type="number" step="0.01" x-model="item.amount" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                            <span
+                                                class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
+                                            <input type="number" step="0.01" x-model="item.amount"
+                                                class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="flex gap-2">
                                     <div class="flex-1">
-                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
-                                        <input type="text" x-model="item.vendor" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
+                                        <input type="text" x-model="item.vendor"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                     </div>
                                     <div class="flex-1">
-                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
-                                        <input type="text" x-model="item.description" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
+                                        <input type="text" x-model="item.description"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                     </div>
                                 </div>
-                                
+
                                 <div class="text-right">
-                                    <button @click="previewData.splice(index, 1)" class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
+                                    <button @click="previewData.splice(index, 1)"
+                                        class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
                                         <i class="fas fa-trash mr-1"></i> Remove Item
                                     </button>
                                 </div>
                             </div>
                         </template>
                     </div>
-                    
+
                     <div class="mt-2 text-right">
-                         <button @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})" class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
+                        <button
+                            @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})"
+                            class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
                             <i class="fas fa-plus mr-1"></i> Add Another Item
-                         </button>
+                        </button>
                     </div>
 
                     <div class="flex gap-2 mt-4">
@@ -188,7 +206,7 @@
 
                     <div class="w-full bg-slate-900 p-3 mt-4 rounded-lg border border-slate-700 text-left relative">
                         <p class="text-xs text-slate-500 uppercase mb-1">Transcript</p>
-                        <textarea x-model="transcript" 
+                        <textarea x-model="transcript"
                             placeholder="Start speaking into microphone or type details here..."
                             class="w-full bg-transparent text-white text-sm italic pr-8 min-h-[80px] resize-none focus:outline-none placeholder-slate-600"
                             :disabled="isListening"></textarea>
@@ -206,6 +224,108 @@
                 </div>
             </div>
 
+            <div x-show="activeTab === 'image'"
+                class="flex flex-col items-center justify-center py-4 space-y-6 text-center">
+
+                <div x-show="previewData" class="w-full text-left bg-slate-900 p-4 rounded-xl border border-slate-700">
+                    <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
+                    <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
+                        <template x-for="(item, index) in previewData" :key="index">
+                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
+
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
+                                        <select x-model="item.category"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                            <option value="Housing">Housing</option>
+                                            <option value="Utilities">Utilities</option>
+                                            <option value="Food">Food</option>
+                                            <option value="Transportation">Transportation</option>
+                                            <option value="Healthcare">Healthcare</option>
+                                            <option value="Personal Care">Personal Care</option>
+                                            <option value="Entertainment">Entertainment</option>
+                                            <option value="Clothing & Apparel">Clothing & Apparel</option>
+                                            <option value="Groceries">Groceries</option>
+                                            <option value="Tax">Tax</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="w-24">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
+                                        <div class="relative">
+                                            <span
+                                                class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
+                                            <input type="number" step="0.01" x-model="item.amount"
+                                                class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <div class="flex-1">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
+                                        <input type="text" x-model="item.vendor"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label
+                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
+                                        <input type="text" x-model="item.description"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    </div>
+                                </div>
+
+                                <div class="text-right">
+                                    <button @click="previewData.splice(index, 1)"
+                                        class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
+                                        <i class="fas fa-trash mr-1"></i> Remove Item
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="mt-2 text-right">
+                        <button
+                            @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})"
+                            class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
+                            <i class="fas fa-plus mr-1"></i> Add Another Item
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 mt-4">
+                        <button @click="previewData = null"
+                            class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
+                        <button @click="confirmAndSave()"
+                            class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm
+                            & Save</button>
+                    </div>
+                </div>
+
+                <div x-show="!previewData" class="w-full flex flex-col items-center">
+                    <div class="relative group cursor-pointer w-full" @click="$refs.imageInput.click()">
+                        <div
+                            class="w-full h-32 bg-slate-800 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 hover:bg-slate-800/50 transition-all">
+                            <i
+                                class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2 group-hover:text-blue-400"></i>
+                            <p class="text-slate-400 text-sm font-medium group-hover:text-blue-400">Click to upload
+                                receipt</p>
+                            <p class="text-slate-500 text-xs mt-1">Supports JPG, PNG</p>
+                        </div>
+                        <input type="file" x-ref="imageInput" @change="processImage($event)" class="hidden"
+                            accept="image/*">
+                    </div>
+
+                    <div x-show="isLoading" class="mt-4 text-blue-400 flex items-center gap-2">
+                        <i class="fas fa-circle-notch animate-spin"></i>
+                        <span x-text="statusMessage">Processing...</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -286,8 +406,44 @@
                 }
             },
 
+            async processImage(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                this.isLoading = true;
+                this.statusMessage = "AI is analyzing receipt...";
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch("{% url 'dashboard:process_image' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        this.previewData = result.data;
+                        this.statusMessage = "Review extraction below";
+                    } else {
+                        alert('Error processing: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Network error');
+                } finally {
+                    this.isLoading = false;
+                    event.target.value = ''; // Reset input
+                }
+            },
+
             async confirmAndSave() {
                 this.isLoading = true;
+                const source = this.activeTab === 'image' ? 'IMAGE' : 'VOICE';
                 try {
                     const response = await fetch("{% url 'dashboard:save_confirmed' %}", {
                         method: 'POST',
@@ -295,7 +451,10 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}'
                         },
-                        body: JSON.stringify({ data: this.previewData })
+                        body: JSON.stringify({
+                            data: this.previewData,
+                            source: source
+                        })
                     });
 
                     const result = await response.json();
