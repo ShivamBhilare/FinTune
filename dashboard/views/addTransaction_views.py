@@ -94,12 +94,84 @@ def process_voice_input(request):
 
 @login_required
 @csrf_exempt
+def process_image_input(request):
+    """Sends image to Gemini and returns parsed JSON"""
+    if request.method == "POST" and request.FILES.get('image'):
+        try:
+            image_file = request.FILES['image']
+            
+            # Read image data
+            image_data = image_file.read()
+            
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
+            
+            prompt = """
+            You are an expert AI Transaction Categorizer. Analyze the receipt image for Vendor, items, and Total.
+
+            **Rules:**
+            1. **Categories (Exact List):** [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Other].
+            2. **Output Detail:** Capture: `[ "Vendor Name", Amount (N.NN), "Item Description", "Transaction Type" ]`. Use "Expense" for receipts.
+            3. **Reconciliation (Mandatory):** Sum of ALL item amounts (including Tax/Fees under 'Other') MUST equal the receipt Total. Adjust if needed. The vendor name should be of maximum 3 words 
+            4. **Omission:** Omit categories with $0.00 total.
+
+            **Output Format (Strict JSON):**
+            * Return **ONE JSON object**. Keys are exact Category Names. Values are arrays of item detail arrays.
+
+            **Example:**
+            ```json
+            {
+             "Food": [
+              ["Dmart", 45.00, "Brown Bread", "Expense"],
+              ["Dmart", 64.00, "Milk", "Expense"]
+             ],
+             "Other": [
+              ["Dmart", 5.50, "Tax", "Expense"]
+             ]
+            }
+            it should strictly return the json data only and nothing else)
+            """
+            
+            # Create the image part for Gemini
+            image_part = {
+                "mime_type": image_file.content_type,
+                "data": image_data
+            }
+
+            response = model.generate_content([prompt, image_part])
+            cleaned_text = response.text.strip().replace('```json', '').replace('```', '')
+            parsed_data = json.loads(cleaned_text)
+            
+            # Transform to flat list for frontend editing (reusing same format as voice)
+            flat_data = []
+            if isinstance(parsed_data, dict):
+                for category, items in parsed_data.items():
+                    for item in items:
+                        # item format: ["Vendor", Amount, "Desc", "Type"]
+                        if isinstance(item, list):
+                            flat_data.append({
+                                'category': category,
+                                'vendor': item[0] if len(item) > 0 else 'Unknown',
+                                'amount': item[1] if len(item) > 1 else 0,
+                                'description': item[2] if len(item) > 2 else '',
+                                'type': item[3] if len(item) > 3 else 'EXPENSE'
+                            })
+            
+            return JsonResponse({'status': 'success', 'data': flat_data})
+        except Exception as e:
+            print(f"Error processing image: {e}")
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request or no image provided'})
+
+@login_required
+@csrf_exempt
 def save_confirmed_transactions(request):
     """Saves the JSON data after user confirmation, aggregating by category"""
     if request.method == "POST":
         try:
             payload = json.loads(request.body)
             items_list = payload.get('data', [])
+            input_source = payload.get('source', 'VOICE') # Default to VOICE if not provided
             
             # Group by category
             grouped_data = {}
@@ -140,7 +212,7 @@ def save_confirmed_transactions(request):
                     vendor_name=merged_vendor,
                     description=merged_desc,
                     transaction_type=trans_type, # Maps to INCOME/EXPENSE
-                    input_source='VOICE'
+                    input_source=input_source
                 )
 
             return JsonResponse({'status': 'success'})

@@ -42,6 +42,8 @@
                     <td class="px-6 py-4">
                         {% if transaction.input_source == 'VOICE' %}
                         <i class="fas fa-microphone text-green-400" title="Voice AI"></i>
+                        {% elif transaction.input_source == 'IMAGE' %}
+                        <i class="fas fa-camera text-blue-400" title="Image AI"></i>
                         {% else %}
                         <i class="fas fa-keyboard text-yellow-400" title="Manual"></i>
                         {% endif %}
