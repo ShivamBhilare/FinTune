@@ -172,4 +172,6 @@ LOGOUT_REDIRECT_URL = '/'
 # Email Backend (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-
+# Google Gemini API Key
+# Google Gemini API Key
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
