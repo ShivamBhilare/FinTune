@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+
+    <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-white">Your Budget Plan</h2>
+    
+    <form method="GET" action="{% url 'dashboard:budget_generator' %}" class="flex items-center gap-2">
+        <label class="text-sm text-slate-400">Method:</label>
+        <select name="strategy" onchange="this.form.submit()" class="bg-slate-800 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+            <option value="classic" {% if current_selection == 'classic' %}selected{% endif %}>Classic (50/30/20)</option>
+            <option value="survivor" {% if current_selection == 'survivor' %}selected{% endif %}>Survivor (70/20/10)</option>
+            <option value="savings" {% if current_selection == 'savings' %}selected{% endif %}>Savings First (Aggressive)</option>
+        </select>
+    </form>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+            <div class="relative z-10">
+                <p class="text-indigo-100 font-medium mb-1">Daily Safe Spend Limit</p>
+                <h1 class="text-5xl font-bold mb-2">₹{{ daily_safe_spend|floatformat:0 }}<span class="text-lg font-normal text-indigo-200">/day</span></h1>
+                <p class="text-sm text-indigo-100 opacity-90">
+                    If you spend less than this on "Wants" today, you will stay perfectly on budget for the remaining {{ days_left }} days.
+                </p>
+            </div>
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <p class="text-slate-400 text-xs uppercase tracking-wider">Total Income</p>
+                <p class="text-2xl font-bold text-white">₹{{ income|floatformat:0 }}</p>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <p class="text-slate-400 text-xs uppercase tracking-wider">Total Spent So Far</p>
+                <p class="text-2xl font-bold text-red-400">₹{{ spent_total|floatformat:0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-xl border border-slate-700 p-6">
+        <div class="flex items-start gap-4">
+            <div class="p-3 bg-blue-500/10 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-white">AI Strategy: {{ strategy.name }}</h3>
+                <p class="text-slate-400 text-sm mt-1">{{ recommendation_reason }}</p>
+            </div>
+        </div>
+    </div>
+
+<input type="hidden" id="userIncome" value="{{ income }}">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium">Needs (Essentials)</h3>
+                <span class="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">Target: ₹<span id="needsAmount">{{ strategy.needs_budget|floatformat:0 }}</span></span>
+            </div>
+            
+            <div class="w-full bg-slate-700 h-2 rounded-full mb-6 overflow-hidden">
+                <div class="{% if left_needs < 0 %}bg-red-500{% else %}bg-emerald-500{% endif %} h-2 rounded-full transition-all duration-500" 
+                style="width: {% if left_needs < 0 %}100%{% else %}{% widthratio spent_needs strategy.needs_budget 100 %}%{% endif %}">
+            </div>
+        </div>
+        <div class="mb-2 flex justify-between text-xs text-slate-400">
+            <span>Spent: ₹{{ spent_needs|floatformat:0 }}</span>
+            <span>Left: ₹{{ left_needs|floatformat:0 }}</span>
+        </div>
+        
+            <div class="mt-auto">
+                 <!-- Removed Allocation Slider -->
+            </div>
+        </div>
+
+        <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium">Wants (Lifestyle)</h3>
+                <span class="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">Target: ₹<span id="wantsAmount">{{ strategy.wants_budget|floatformat:0 }}</span></span>
+            </div>
+            
+            <div class="w-full bg-slate-700 h-2 rounded-full mb-6 overflow-hidden">
+                <div class="{% if left_wants < 0 %}bg-red-500{% else %}bg-purple-500{% endif %} h-2 rounded-full transition-all duration-500" 
+                style="width: {% if left_wants < 0 %}100%{% else %}{% widthratio spent_wants strategy.wants_budget 100 %}%{% endif %}">
+            </div>
+        </div>
+        <div class="mb-2 flex justify-between text-xs text-slate-400">
+            <span>Spent: ₹{{ spent_wants|floatformat:0 }}</span>
+            <span>Left: ₹{{ left_wants|floatformat:0 }}</span>
+        </div>
+        
+            <div class="mt-auto">
+                 <!-- Removed Allocation Slider -->
+            </div>
+        </div>
+
+        <div class="bg-slate-800 rounded-xl border border-slate-700 p-5 flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-medium">Savings (Future)</h3>
+                <span class="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">Target: ₹<span id="savingsAmount">{{ strategy.savings_budget|floatformat:0 }}</span></span>
+            </div>
+            
+            <div class="w-full bg-slate-700 h-2 rounded-full mb-6 overflow-hidden">
+                <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                     style="width: {% widthratio strategy.savings_budget income 100 %}%">
+                </div>
+            </div>
+
+            <div class="p-2 bg-slate-700/30 rounded-lg text-center border border-dashed border-slate-600 mb-3">
+                <p class="text-slate-400 text-xs mb-1">Projected Savings</p>
+                <p class="text-lg font-bold text-emerald-400">₹<span id="savingsAmountBig">{{ strategy.savings_budget|floatformat:0 }}</span></p>
+            </div>
+            
+            <!-- Sliders Removed -->
+        </div>
+    </div>
+</div>
+{% endblock %}
