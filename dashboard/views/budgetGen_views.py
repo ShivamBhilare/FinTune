@@ -7,21 +7,66 @@ import calendar
 from dashboard.models import Transaction
 
 # --- HELPER: Get Data for Calculations ---
+# def get_monthly_data(user):
+#     now = timezone.now()
+    
+#     # 1. Get Income (Sum of INCOME transactions for current month)
+#     income_agg = Transaction.objects.filter(
+#         user=user,
+#         transaction_type='INCOME',
+#         date__month=now.month,
+#         date__year=now.year
+#     ).aggregate(Sum('amount'))
+    
+#     # Handle case where result is None (no income yet)
+#     income = income_agg['amount__sum'] or Decimal(0)
+    
+#     # 2. Get Actual Expenses for Current Month
+#     expenses = Transaction.objects.filter(
+#         user=user,
+#         transaction_type='EXPENSE',
+#         date__month=now.month,
+#         date__year=now.year
+#     )
+    
+#     # Group Expenses by "Needs" and "Wants"
+#     needs_list = [
+#         'Housing', 'HOUSING',
+#         'Utilities', 'UTILITIES',
+#         'Groceries', 'GROCERIES',
+#         'Transportation', 'TRANSPORTATION', 'TRANSPORT',
+#         'Healthcare', 'HEALTHCARE', 'HEALTH',
+#         'Tax', 'TAX'
+#     ]
+    
+#     # 4. Calculate NEEDS Spending
+#     # We use field__in checks against the list
+#     spent_needs = expenses.filter(category__in=needs_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    
+#     # 5. Calculate WANTS Spending (Total Expenses - Needs)
+#     # This is safer than using exclude() because it guarantees Total = Needs + Wants
+#     total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+#     spent_wants = total_expenses - spent_needs
+    
+        
+    
+#     return income, spent_needs, spent_wants
+
+# budgetGen_views.py
+
 def get_monthly_data(user):
     now = timezone.now()
     
-    # 1. Get Income (Sum of INCOME transactions for current month)
+    # 1. Get Income
     income_agg = Transaction.objects.filter(
         user=user,
         transaction_type='INCOME',
         date__month=now.month,
         date__year=now.year
     ).aggregate(Sum('amount'))
-    
-    # Handle case where result is None (no income yet)
     income = income_agg['amount__sum'] or Decimal(0)
     
-    # 2. Get Actual Expenses for Current Month
+    # 2. Get All Expenses
     expenses = Transaction.objects.filter(
         user=user,
         transaction_type='EXPENSE',
@@ -29,15 +74,35 @@ def get_monthly_data(user):
         date__year=now.year
     )
     
-    # Group Expenses by "Needs" and "Wants"
-    needs_categories = ['FOOD', 'BILLS', 'TRANSPORT', 'EDUCATION', 'HEALTH']
+    # 3. Define Categories (Case Insensitive)
+    needs_list = [
+        'Housing', 'HOUSING', 'housing',
+        'Utilities', 'UTILITIES', 'utilities',
+        'Groceries', 'GROCERIES', 'groceries',
+        'Transportation', 'TRANSPORTATION', 'transportation',
+        'Healthcare', 'HEALTHCARE', 'healthcare',
+        'Tax', 'TAX', 'tax'
+    ]
     
-    spent_needs = expenses.filter(category__in=needs_categories).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    spent_wants = expenses.exclude(category__in=needs_categories).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    # New: Define Savings Categories
+    # Any transaction with these names will fill the "Savings" bar
+    savings_list = [
+        'Savings', 'SAVINGS', 'savings',
+        'Investments', 'INVESTMENTS', 'investments', 'Investment', 'investment', 'INVESTMENT',
+        'SIP', 'sip', 'Mutual Funds', 'Stocks',
+        'Debt', 'DEBT', 'Loan Repayment'
+    ]
     
-    return income, spent_needs, spent_wants
-
-# --- HELPER: Strategy Logics ---
+    # 4. Calculate Buckets
+    spent_needs = expenses.filter(category__in=needs_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    saved_savings = expenses.filter(category__in=savings_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    
+    # 5. Calculate Wants
+    # Wants = Total Expenses - (Needs + Savings)
+    total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    spent_wants = total_expenses - spent_needs - saved_savings
+    
+    return income, spent_needs, spent_wants, saved_savings
 
 def calculate_50_30_20(income):
     """Classic: 50% Needs, 30% Wants, 20% Savings"""
@@ -74,7 +139,7 @@ def calculate_savings_first(income):
 @login_required
 def budget_generator_view(request):
     user = request.user
-    income, spent_needs, spent_wants = get_monthly_data(user)
+    income, spent_needs, spent_wants, saved_savings = get_monthly_data(user)
     
     # 1. Check if user manually selected a strategy
     selected_strategy = request.GET.get('strategy') # e.g. 'survivor', 'savings'
@@ -127,7 +192,7 @@ def budget_generator_view(request):
     
     wants_remaining = strategy['wants_budget'] - spent_wants
     daily_safe_spend = max(0, wants_remaining / days_left)
-
+    left_savings = strategy['savings_budget'] - saved_savings
     # 4. Prepare Context
     context = {
         'strategy': strategy,
@@ -138,11 +203,13 @@ def budget_generator_view(request):
         # Actuals
         'spent_needs': spent_needs,
         'spent_wants': spent_wants,
-        'spent_total': spent_needs + spent_wants,
+        'saved_savings': saved_savings, # <--- Pass this
+        'spent_total': spent_needs + spent_wants + saved_savings,
         
-        # Variances (Budget - Actual)
+        # Variances
         'left_needs': strategy['needs_budget'] - spent_needs,
         'left_wants': wants_remaining,
+        'left_savings': left_savings,   # <--- Pass this
         
         # Extras
         'daily_safe_spend': daily_safe_spend,

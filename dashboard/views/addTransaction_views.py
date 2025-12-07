@@ -52,7 +52,7 @@ def process_voice_input(request):
         
         2. Categorization Rules
         You must categorize each item into one of the following exact categories:
-        [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Other]
+        [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Salary, Investment, Savings, Other]
         If an item does not fit any category clearly, use "Other".
         If multiple items belong to the same category, merge them into a single category property and sum amounts belonging to the same item name when appropriate.
 
@@ -109,7 +109,7 @@ def process_image_input(request):
             You are an expert AI Transaction Categorizer. Analyze the receipt image for Vendor, items, and Total.
 
             **Rules:**
-            1. **Categories (Exact List):** [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Other].
+            1. **Categories (Exact List):** [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Salary, Investment, Savings, Other].
             2. **Output Detail:** Capture: `[ "Vendor Name", Amount (N.NN), "Item Description", "Transaction Type" ]`. Use "Expense" for receipts.
             3. **Reconciliation (Mandatory):** Sum of ALL item amounts (including Tax/Fees under 'Other') MUST equal the receipt Total. Adjust if needed. The vendor name should be of maximum 3 words 
             4. **Omission:** Omit categories with $0.00 total.
