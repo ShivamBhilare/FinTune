@@ -1,39 +1,51 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from dashboard.models import Transaction
+from dashboard.forms import TransactionForm 
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum
+from decimal import Decimal
 import json
 import google.generativeai as genai
 import os
 from django.http import JsonResponse
-from dashboard.models import Transaction
-
-
 
 # Configure Gemini
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
+# --- 1. NEW MANUAL TRANSACTION VIEW ---
 @login_required
 def add_manual_transaction(request):
-    if request.method == "POST":
-        amount = request.POST.get('amount')
-        category = request.POST.get('category')
-        vendor = request.POST.get('vendor')
-        trans_type = request.POST.get('type') # INCOME or EXPENSE
-        description = request.POST.get('description')
+    try:
+        if request.method == "POST":
+            # Pass the user to the form so it can check balances
+            form = TransactionForm(request.user, request.POST)
+            
+            if form.is_valid():
+                transaction = form.save(commit=False)
+                transaction.user = request.user
+                transaction.input_source = 'MANUAL'
+                transaction.save()
+                return JsonResponse({'status': 'success'})
+            else:
+                # Extract the first error message clearly
+                error_message = "Invalid Data"
+                if form.non_field_errors():
+                    error_message = form.non_field_errors()[0]
+                else:
+                    # Get the first field error
+                    for field, errors in form.errors.items():
+                        error_message = f"{field}: {errors[0]}"
+                        break
+                
+                return JsonResponse({'status': 'error', 'message': error_message})
         
-        Transaction.objects.create(
-            user=request.user,
-            amount=amount,
-            category=category,
-            vendor_name=vendor,
-            description=description,
-            transaction_type=trans_type,
-            input_source='MANUAL'
-        )
-        return redirect('dashboard:home')
-    return redirect('dashboard:home')
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+    except Exception as e:
+        # Catch any unexpected errors (DB, Logic, etc.)
+        return JsonResponse({'status': 'error', 'message': f"System Error: {str(e)}"})
 
+# --- 2. VOICE & IMAGE PROCESSORS (Keep your existing AI logic) ---
 @login_required
 @csrf_exempt
 def process_voice_input(request):
@@ -62,7 +74,7 @@ def process_voice_input(request):
         No explanation. No extra text. No comments. No calculations shown. Just JSON.
         Each category must contain an array of arrays.
         Each inner array must follow this format:
-        ["Vendor/Store Name", Amount (number, two decimals, no currency symbol), "Description", "Income/Expense"]
+        ["Vendor/Store Name", Amount (number, two decimals, no currency symbol), "Description", "Income/Expense/Investment"]
         Only include categories that actually appear in the receipt.
         """
 
@@ -110,7 +122,7 @@ def process_image_input(request):
 
             **Rules:**
             1. **Categories (Exact List):** [Housing, Utilities, Food, Transportation, Healthcare, Personal Care, Entertainment, Clothing & Apparel, Groceries, Tax, Salary, Investment, Savings, Other].
-            2. **Output Detail:** Capture: `[ "Vendor Name", Amount (N.NN), "Item Description", "Transaction Type" ]`. Use "Expense" for receipts.
+            2. **Output Detail:** Capture: `[ "Vendor Name", Amount (N.NN), "Item Description", "Transaction Type(Income/Expense/Investment)" ]`. Use "Expense" for receipts.
             3. **Reconciliation (Mandatory):** Sum of ALL item amounts (including Tax/Fees under 'Other') MUST equal the receipt Total. Adjust if needed. The vendor name should be of maximum 3 words 
             4. **Omission:** Omit categories with $0.00 total.
 
@@ -163,46 +175,64 @@ def process_image_input(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request or no image provided'})
 
+# --- 3. UPDATED SAVE CONFIRMED (With Balance Check) ---
 @login_required
 @csrf_exempt
 def save_confirmed_transactions(request):
-    """Saves the JSON data after user confirmation, aggregating by category"""
     if request.method == "POST":
         try:
             payload = json.loads(request.body)
             items_list = payload.get('data', [])
-            input_source = payload.get('source', 'VOICE') # Default to VOICE if not provided
+            input_source = payload.get('source', 'VOICE')
+            is_external = payload.get('is_external', False) # New Flag
             
-            # Group by category
+            # 1. Calculate Total New Expense
+            total_new_expense = sum(float(item.get('amount', 0)) for item in items_list if item.get('type') in ['EXPENSE', 'INVESTMENT'])
+            
+            # 2. Check Wallet Balance (ONLY if not external)
+            if not is_external:
+                # 1. Get Initial Balance from Profile
+                try:
+                    initial_balance = request.user.profile.cash_balance or Decimal(0)
+                except Exception:
+                    initial_balance = Decimal(0)
+
+                incomes = Transaction.objects.filter(user=request.user, transaction_type='INCOME', is_external=False).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+                expenses = Transaction.objects.filter(user=request.user, transaction_type__in=['EXPENSE', 'INVESTMENT'], is_external=False).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+                
+                current_balance = initial_balance + incomes - expenses
+
+                if Decimal(total_new_expense) > current_balance:
+                    return JsonResponse({'status': 'error', 'message': f'Insufficient Funds! Wallet Balance: ₹{current_balance}'})
+
+            # 3. Save Data
             grouped_data = {}
-            
             for item in items_list:
                 cat = item.get('category', 'Other')
-                if cat not in grouped_data:
-                    grouped_data[cat] = []
+                if cat not in grouped_data: grouped_data[cat] = []
                 grouped_data[cat].append(item)
 
             for category, items in grouped_data.items():
                 total_amount = 0
                 vendors = set()
                 descriptions = []
-                trans_type = "EXPENSE" # Default
+                trans_type = "EXPENSE"
                 
-                # Aggregation Logic
                 for item in items:
-                    # Item format is now a dict
                     vendor = item.get('vendor', 'Unknown')
                     amount = float(item.get('amount', 0))
                     desc = item.get('description', '')
                     t_type = item.get('type', 'EXPENSE').upper() 
+                    
+                    if category.lower() in ['savings', 'investment']:
+                        t_type = 'INVESTMENT'
 
                     total_amount += amount
                     vendors.add(vendor)
                     descriptions.append(desc)
                     trans_type = t_type 
 
-                # Create merged Vendor name and Description
-                merged_vendor = ", ".join(list(vendors))[:95] # Truncate to fit model
+                merged_vendor = ", ".join(list(vendors))[:95]
                 merged_desc = ", ".join(descriptions)[:250]
 
                 Transaction.objects.create(
@@ -211,13 +241,13 @@ def save_confirmed_transactions(request):
                     category=category,
                     vendor_name=merged_vendor,
                     description=merged_desc,
-                    transaction_type=trans_type, # Maps to INCOME/EXPENSE
-                    input_source=input_source
+                    transaction_type=trans_type,
+                    input_source=input_source,
+                    is_external=is_external 
                 )
 
             return JsonResponse({'status': 'success'})
         except Exception as e:
-            print(e)
             return JsonResponse({'status': 'error', 'message': str(e)})
             
-    return JsonResponse({'status': 'error'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid Request'})

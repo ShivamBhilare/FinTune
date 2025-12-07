@@ -2,12 +2,15 @@
 <div x-show="transactionModalOpen" x-cloak style="display: none;" x-data="transactionModalHandler()"
     class="fixed inset-0 z-[60] flex items-center justify-center p-4">
 
+    <!-- Backdrop -->
     <div x-show="transactionModalOpen" @click="transactionModalOpen = false"
         class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"></div>
 
+    <!-- Modal Content -->
     <div x-show="transactionModalOpen"
         class="relative w-full max-w-lg bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
 
+        <!-- Header -->
         <div class="flex items-center justify-between p-6 border-b border-slate-700">
             <h3 class="text-xl font-bold text-white">New Transaction</h3>
             <button @click="transactionModalOpen = false" class="text-slate-400 hover:text-white transition-colors">
@@ -15,51 +18,70 @@
             </button>
         </div>
 
+        <!-- ERROR MESSAGE BANNER -->
+        <div x-show="errorMessage" x-transition 
+             class="bg-red-500/10 border-b border-red-500/20 p-4 flex items-start gap-3">
+            <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+            <div>
+                <p class="text-sm font-bold text-red-400">Transaction Failed</p>
+                <p class="text-xs text-red-300/80" x-text="errorMessage"></p>
+            </div>
+            <button @click="errorMessage = null" class="ml-auto text-red-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Hub Tabs -->
         <div class="flex p-2 bg-slate-900/50 gap-2 border-b border-slate-700">
-            <button @click="activeTab = 'manual'"
+            <button @click="switchTab('manual')"
                 :class="activeTab === 'manual' ? 'bg-slate-700 text-yellow-400 border-slate-600' : 'text-slate-400 hover:text-white border-transparent'"
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
                 <i class="fas fa-keyboard"></i> Manual
             </button>
-            <button @click="activeTab = 'voice'"
+            <button @click="switchTab('voice')"
                 :class="activeTab === 'voice' ? 'bg-slate-700 text-green-400 border-slate-600' : 'text-slate-400 hover:text-white border-transparent'"
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
                 <i class="fas fa-microphone"></i> Voice
             </button>
-            <button @click="activeTab = 'image'"
+            <button @click="switchTab('image')"
                 :class="activeTab === 'image' ? 'bg-slate-700 text-blue-400 border-slate-600' : 'text-slate-400 hover:text-white border-transparent'"
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all border">
                 <i class="fas fa-image"></i> Image
             </button>
         </div>
 
-        <div class="p-6 overflow-y-auto">
+        <!-- Scrollable Content -->
+        <div class="p-6 overflow-y-auto relative">
 
-            <form action="{% url 'dashboard:add_manual' %}" method="POST" x-show="activeTab === 'manual'"
-                class="space-y-4">
-                {% csrf_token %}
-
+            <!-- MANUAL FORM -->
+            <form id="manualTransactionForm" @submit.prevent="promptExternalCheck()" x-show="activeTab === 'manual'" class="space-y-4">
+                
+                <!-- Type Selection -->
                 <div class="flex gap-4 mb-2">
                     <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="type" value="EXPENSE" checked class="peer sr-only">
-                        <div
-                            class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-red-500/20 peer-checked:text-red-400 peer-checked:border-red-500 transition-all text-slate-400 font-bold text-sm">
+                        <input type="radio" name="transaction_type" value="EXPENSE" checked class="peer sr-only">
+                        <div class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-red-500/20 peer-checked:text-red-400 peer-checked:border-red-500 transition-all text-slate-400 font-bold text-sm">
                             EXPENSE
                         </div>
                     </label>
                     <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="type" value="INCOME" class="peer sr-only">
-                        <div
-                            class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-green-500/20 peer-checked:text-green-400 peer-checked:border-green-500 transition-all text-slate-400 font-bold text-sm">
+                        <input type="radio" name="transaction_type" value="INCOME" class="peer sr-only">
+                        <div class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-green-500/20 peer-checked:text-green-400 peer-checked:border-green-500 transition-all text-slate-400 font-bold text-sm">
                             INCOME
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="transaction_type" value="INVESTMENT" class="peer sr-only">
+                        <div class="text-center py-2 rounded-lg border border-slate-700 peer-checked:bg-blue-500/20 peer-checked:text-blue-400 peer-checked:border-blue-500 transition-all text-slate-400 font-bold text-sm">
+                            INVESTMENT
                         </div>
                     </label>
                 </div>
 
+                <!-- Inputs -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Vendor
-                        Name</label>
-                    <input type="text" name="vendor" required placeholder="e.g. Walmart"
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Vendor Name</label>
+                    <input type="text" name="vendor_name" required placeholder="e.g. Walmart"
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
                 </div>
 
@@ -73,10 +95,8 @@
                 </div>
 
                 <div>
-                    <label
-                        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Category</label>
-                    <select name="category"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all appearance-none">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Category</label>
+                    <select name="category" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all appearance-none">
                         <option value="Housing">Housing</option>
                         <option value="Utilities">Utilities</option>
                         <option value="Food">Food</option>
@@ -88,117 +108,102 @@
                         <option value="Groceries">Groceries</option>
                         <option value="Tax">Tax</option>
                         <option value="Savings">Savings</option>
-                        <option value="Salary">Salary</option>
                         <option value="Investment">Investment</option>
+                        <option value="Salary">Salary</option>
                         <option value="Other">Other</option>
                     </select>
                 </div>
 
                 <div>
-                    <label
-                        class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
                     <input type="text" name="description" placeholder="Optional description..."
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-all">
                 </div>
 
+                <!-- Hidden Input for External Transaction -->
+                <input type="hidden" name="is_external" x-model="isExternal">
+
                 <button type="submit"
-                    class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-3.5 rounded-xl transition-all shadow-lg mt-2 active:scale-95">
-                    Save Transaction
+                    class="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-3.5 rounded-xl transition-all shadow-lg mt-2 active:scale-95 flex justify-center items-center gap-2">
+                    <span>Save Transaction</span>
                 </button>
             </form>
 
+            <!-- VOICE TAB -->
             <div x-show="activeTab === 'voice'"
                 class="flex flex-col items-center justify-center py-4 space-y-6 text-center">
 
-                <div x-show="previewData" class="w-full text-left bg-slate-900 p-4 rounded-xl border border-slate-700">
-                    <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
-                    <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
-                        <template x-for="(item, index) in previewData" :key="index">
-                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
-
-                                <div class="flex gap-2">
-                                    <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
-                                        <select x-model="item.category"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
-                                            <option value="Housing">Housing</option>
-                                            <option value="Utilities">Utilities</option>
-                                            <option value="Food">Food</option>
-                                            <option value="Transportation">Transportation</option>
-                                            <option value="Healthcare">Healthcare</option>
-                                            <option value="Personal Care">Personal Care</option>
-                                            <option value="Entertainment">Entertainment</option>
-                                            <option value="Clothing & Apparel">Clothing & Apparel</option>
-                                            <option value="Groceries">Groceries</option>
-                                            <option value="Tax">Tax</option>
-                                            <option value="Savings">Savings</option>
-                                            <option value="Salary">Salary</option>
-                                            <option value="Investment">Investment</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div class="w-24">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
-                                        <div class="relative">
-                                            <span
-                                                class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
-                                            <input type="number" step="0.01" x-model="item.amount"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                <!-- Preview Section (Shared Logic) -->
+                <template x-if="previewData">
+                    <div class="w-full text-left bg-slate-900 p-4 rounded-xl border border-slate-700">
+                        <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
+                        <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
+                            <template x-for="(item, index) in previewData" :key="index">
+                                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
+                                    <div class="flex gap-2">
+                                        <div class="flex-1">
+                                            <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
+                                            <select x-model="item.category" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                                <option value="Housing">Housing</option>
+                                                <option value="Utilities">Utilities</option>
+                                                <option value="Food">Food</option>
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Personal Care">Personal Care</option>
+                                                <option value="Entertainment">Entertainment</option>
+                                                <option value="Clothing & Apparel">Clothing & Apparel</option>
+                                                <option value="Groceries">Groceries</option>
+                                                <option value="Tax">Tax</option>
+                                                <option value="Savings">Savings</option>
+                                                <option value="Investment">Investment</option>
+                                                <option value="Salary">Salary</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="w-24">
+                                            <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
+                                            <input type="number" step="0.01" x-model="item.amount" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="flex gap-2">
-                                    <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
-                                        <input type="text" x-model="item.vendor"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    <div class="flex gap-2">
+                                        <div class="flex-1">
+                                            <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
+                                            <input type="text" x-model="item.vendor" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
+                                            <input type="text" x-model="item.description" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        </div>
                                     </div>
-                                    <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
-                                        <input type="text" x-model="item.description"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                    <div class="text-right">
+                                        <button @click="previewData.splice(index, 1)" class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
+                                            <i class="fas fa-trash mr-1"></i> Remove Item
+                                        </button>
                                     </div>
                                 </div>
+                            </template>
+                        </div>
 
-                                <div class="text-right">
-                                    <button @click="previewData.splice(index, 1)"
-                                        class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
-                                        <i class="fas fa-trash mr-1"></i> Remove Item
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
+                        <div class="mt-2 text-right">
+                            <button @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})" class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
+                                <i class="fas fa-plus mr-1"></i> Add Another Item
+                            </button>
+                        </div>
 
-                    <div class="mt-2 text-right">
-                        <button
-                            @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})"
-                            class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
-                            <i class="fas fa-plus mr-1"></i> Add Another Item
-                        </button>
+                        <!-- Modified Buttons to Trigger Popup -->
+                        <div class="flex gap-2 mt-4">
+                            <button @click="previewData = null" class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
+                            <button @click="showExternalPrompt = true" class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm & Save</button>
+                        </div>
                     </div>
-
-                    <div class="flex gap-2 mt-4">
-                        <button @click="previewData = null"
-                            class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
-                        <button @click="confirmAndSave()"
-                            class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm
-                            & Save</button>
-                    </div>
-                </div>
+                </template>
 
                 <div x-show="!previewData" class="w-full flex flex-col items-center">
                     <div class="relative group cursor-pointer" @click="toggleListening()">
                         <div class="absolute inset-0 bg-green-500/20 rounded-full group-hover:bg-green-500/30"
                             :class="{'animate-ping': isListening}">
                         </div>
-                        <div
-                            class="relative w-24 h-24 bg-slate-800 border-2 border-green-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-active:scale-95">
+                        <div class="relative w-24 h-24 bg-slate-800 border-2 border-green-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-active:scale-95">
                             <i class="fas fa-microphone text-4xl text-green-500"
                                 :class="{'text-white': isListening}"></i>
                         </div>
@@ -230,6 +235,7 @@
                 </div>
             </div>
 
+            <!-- IMAGE TAB -->
             <div x-show="activeTab === 'image'"
                 class="flex flex-col items-center justify-center py-4 space-y-6 text-center">
 
@@ -237,14 +243,11 @@
                     <h4 class="text-white font-bold mb-3 border-b border-slate-700 pb-2">Review Extracted Data</h4>
                     <div class="space-y-3 max-h-64 overflow-y-auto text-sm pr-1">
                         <template x-for="(item, index) in previewData" :key="index">
-                            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-3">
-
+                            <div class="bg-slate-800 p-3 reversed-lg border border-slate-700 space-y-3">
                                 <div class="flex gap-2">
                                     <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
-                                        <select x-model="item.category"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Category</label>
+                                        <select x-model="item.category" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                             <option value="Housing">Housing</option>
                                             <option value="Utilities">Utilities</option>
                                             <option value="Food">Food</option>
@@ -256,41 +259,28 @@
                                             <option value="Groceries">Groceries</option>
                                             <option value="Tax">Tax</option>
                                             <option value="Savings">Savings</option>
-                                            <option value="Salary">Salary</option>
                                             <option value="Investment">Investment</option>
+                                            <option value="Salary">Salary</option>
                                             <option value="Other">Other</option>
                                         </select>
                                     </div>
                                     <div class="w-24">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
-                                        <div class="relative">
-                                            <span
-                                                class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">₹</span>
-                                            <input type="number" step="0.01" x-model="item.amount"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white py-2 pl-5 pr-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
-                                        </div>
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Amount</label>
+                                        <input type="number" step="0.01" x-model="item.amount" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                     </div>
                                 </div>
-
                                 <div class="flex gap-2">
                                     <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
-                                        <input type="text" x-model="item.vendor"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Vendor</label>
+                                        <input type="text" x-model="item.vendor" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                     </div>
                                     <div class="flex-1">
-                                        <label
-                                            class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
-                                        <input type="text" x-model="item.description"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
+                                        <label class="text-[10px] uppercase text-slate-500 font-bold block mb-1">Description</label>
+                                        <input type="text" x-model="item.description" class="w-full bg-slate-900 border border-slate-700 rounded text-xs text-white p-2 focus:ring-1 focus:ring-yellow-400 focus:outline-none">
                                     </div>
                                 </div>
-
                                 <div class="text-right">
-                                    <button @click="previewData.splice(index, 1)"
-                                        class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
+                                    <button @click="previewData.splice(index, 1)" class="text-[10px] text-red-400 hover:text-red-300 font-semibold uppercase tracking-wider">
                                         <i class="fas fa-trash mr-1"></i> Remove Item
                                     </button>
                                 </div>
@@ -299,34 +289,25 @@
                     </div>
 
                     <div class="mt-2 text-right">
-                        <button
-                            @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})"
-                            class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
+                        <button @click="previewData.push({category: 'Other', amount: 0, vendor: '', description: '', type: 'EXPENSE'})" class="text-xs text-yellow-500 font-bold hover:text-yellow-400">
                             <i class="fas fa-plus mr-1"></i> Add Another Item
                         </button>
                     </div>
 
                     <div class="flex gap-2 mt-4">
-                        <button @click="previewData = null"
-                            class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
-                        <button @click="confirmAndSave()"
-                            class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm
-                            & Save</button>
+                        <button @click="previewData = null" class="flex-1 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600">Decline</button>
+                        <button @click="showExternalPrompt = true" class="flex-1 py-2 bg-green-500 text-slate-900 font-bold rounded-lg text-sm hover:bg-green-400">Confirm & Save</button>
                     </div>
                 </div>
 
                 <div x-show="!previewData" class="w-full flex flex-col items-center">
                     <div class="relative group cursor-pointer w-full" @click="$refs.imageInput.click()">
-                        <div
-                            class="w-full h-32 bg-slate-800 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 hover:bg-slate-800/50 transition-all">
-                            <i
-                                class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2 group-hover:text-blue-400"></i>
-                            <p class="text-slate-400 text-sm font-medium group-hover:text-blue-400">Click to upload
-                                receipt</p>
+                        <div class="w-full h-32 bg-slate-800 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center hover:border-blue-500 hover:bg-slate-800/50 transition-all">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2 group-hover:text-blue-400"></i>
+                            <p class="text-slate-400 text-sm font-medium group-hover:text-blue-400">Click to upload receipt</p>
                             <p class="text-slate-500 text-xs mt-1">Supports JPG, PNG</p>
                         </div>
-                        <input type="file" x-ref="imageInput" @change="processImage($event)" class="hidden"
-                            accept="image/*">
+                        <input type="file" x-ref="imageInput" @change="processImage($event)" class="hidden" accept="image/*">
                     </div>
 
                     <div x-show="isLoading" class="mt-4 text-blue-400 flex items-center gap-2">
@@ -335,6 +316,39 @@
                     </div>
                 </div>
             </div>
+
+            <!-- UNIFIED EXTERNAL TRANSACTION CONFIRMATION POPUP -->
+            <div x-show="showExternalPrompt" x-cloak
+                 class="absolute inset-0 z-[70] bg-slate-900/90 flex items-center justify-center p-6 backdrop-blur-sm transition-opacity">
+                <div class="bg-slate-800 border border-slate-600 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                    <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-globe text-2xl text-blue-400"></i>
+                    </div>
+                    
+                    <h4 class="text-white font-bold text-lg mb-2">External Transaction?</h4>
+                    <p class="text-slate-400 text-sm mb-6">
+                        Is this transaction made from an outside source (e.g. Gift Card, Other Bank) that should 
+                        <span class="text-white font-bold">NOT</span> affect your wallet balance?
+                    </p>
+
+                    <div class="space-y-3">
+                        <!-- Generalized Handler Calls -->
+                        <button @click="handleExternalChoice(true)"
+                            class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-all">
+                            Yes, it's External
+                        </button>
+                        <button @click="handleExternalChoice(false)"
+                            class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-all">
+                            No, use Wallet
+                        </button>
+                        <button @click="showExternalPrompt = false"
+                            class="text-xs text-slate-500 hover:text-white mt-2">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -348,7 +362,12 @@
             recognition: null,
             previewData: null,
             isLoading: false,
-            statusMessage: 'Ready to record',
+            statusMessage: 'Ready',
+            errorMessage: null,
+            
+            // New State for External Popup
+            showExternalPrompt: false,
+            isExternal: false,
 
             init() {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -356,21 +375,26 @@
                     this.recognition = new SpeechRecognition();
                     this.recognition.continuous = true;
                     this.recognition.interimResults = true;
-
                     this.recognition.onresult = (event) => {
                         let finalTranscript = '';
                         for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            if (event.results[i].isFinal) {
-                                finalTranscript += event.results[i][0].transcript;
-                            }
+                            if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
                         }
-                        if (finalTranscript) {
-                            this.transcript += finalTranscript + ' ';
-                        }
+                        if (finalTranscript) this.transcript += finalTranscript + ' ';
                     };
-
                     this.recognition.onstart = () => { this.isListening = true; this.statusMessage = "Listening..."; };
                     this.recognition.onend = () => { this.isListening = false; this.statusMessage = "Processing stopped."; };
+                }
+            },
+            
+            switchTab(tab) {
+                this.activeTab = tab;
+                this.errorMessage = null;
+                this.previewData = null; // Clear AI data when switching to Manual/fresh start
+                if(tab !== 'voice') {
+                    if(this.recognition && this.isListening) {
+                        this.recognition.stop();
+                    }
                 }
             },
 
@@ -450,9 +474,65 @@
                 }
             },
 
-            async confirmAndSave() {
+            // Step 1: Trigger Popup from Manual Form
+            promptExternalCheck() {
+                // Validate form first
+                const form = document.getElementById('manualTransactionForm');
+                if (form.checkValidity()) {
+                    this.showExternalPrompt = true;
+                    this.errorMessage = null;
+                } else {
+                    form.reportValidity();
+                }
+            },
+
+            // Step 2: Handle Popup Selection (Unified)
+            handleExternalChoice(isExternal) {
+                this.isExternal = isExternal;
+                this.showExternalPrompt = false;
+
+                if (this.activeTab === 'manual') {
+                    this.submitManualForm();
+                } else {
+                    this.submitAiTransaction();
+                }
+            },
+
+            // Step 3a: Manual Submission
+            async submitManualForm() {
                 this.isLoading = true;
+                this.errorMessage = null;
+                
+                const form = document.getElementById('manualTransactionForm');
+                const formData = new FormData(form);
+                
+                // Set is_external based on the popup selection
+                if (this.isExternal) {
+                    formData.set('is_external', 'on');
+                } else {
+                    formData.delete('is_external'); 
+                }
+
+                try {
+                    const response = await fetch("{% url 'dashboard:add_manual' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    await this.handleResponse(response);
+                } catch (error) {
+                    this.handleError(error);
+                }
+            },
+
+            // Step 3b: AI Submission (Voice/Image)
+            async submitAiTransaction() {
+                this.isLoading = true;
+                this.errorMessage = null; 
                 const source = this.activeTab === 'image' ? 'IMAGE' : 'VOICE';
+                
                 try {
                     const response = await fetch("{% url 'dashboard:save_confirmed' %}", {
                         method: 'POST',
@@ -462,18 +542,54 @@
                         },
                         body: JSON.stringify({
                             data: this.previewData,
-                            source: source
+                            source: source,
+                            is_external: this.isExternal // Send Flag to Backend
                         })
                     });
+                    await this.handleResponse(response);
+                } catch (error) {
+                    this.handleError(error);
+                }
+            },
 
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        window.location.reload(); // Reload to show new data on dashboard
-                    } else {
-                        alert('Failed to save.');
+            // Helper: Response Handling
+            async handleResponse(response) {
+                try {
+                    const text = await response.text();
+                    try {
+                        const result = JSON.parse(text);
+                        if (result.status === 'success') {
+                            window.location.reload();
+                        } else {
+                            this.errorMessage = result.message || "An error occurred.";
+                            this.scrollToTop();
+                        }
+                    } catch (e) {
+                        console.error("Non-JSON Response:", text);
+                        this.errorMessage = "Server Error: Unexpected response format.";
+                        this.scrollToTop();
                     }
                 } catch (e) {
-                    alert('Error saving data');
+                     this.handleError(e);
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            // Helper: Error Handling
+            handleError(error) {
+                console.error("Network/JS Error:", error);
+                this.errorMessage = "Network error: " + (error.message || "Unknown");
+                this.scrollToTop();
+                this.isLoading = false;
+            },
+
+            scrollToTop() {
+                try {
+                    const scrollContainer = this.$el.querySelector('.overflow-y-auto');
+                    if (scrollContainer) scrollContainer.scrollTop = 0;
+                } catch (e) {
+                    console.log("Scroll error:", e);
                 }
             }
         }
