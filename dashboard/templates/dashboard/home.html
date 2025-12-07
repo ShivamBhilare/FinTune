@@ -112,17 +112,23 @@
       ></div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-700/50">
+    <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-700/50">
       <div>
         <p class="text-xs text-slate-500">Income</p>
         <p class="text-sm font-semibold text-slate-300">
-          ₹{{ monthly_income|floatformat:2 }}
+          ₹{{ monthly_income|floatformat:0 }}
         </p>
       </div>
       <div>
-        <p class="text-xs text-slate-500">Spent (This Month)</p>
+        <p class="text-xs text-slate-500">Spent</p>
         <p class="text-sm font-semibold text-red-400">
-          ₹{{ current_expenses|floatformat:2 }}
+          ₹{{ current_expenses|floatformat:0 }}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-slate-500">Invested</p>
+        <p class="text-sm font-semibold text-emerald-400">
+          ₹{{ monthly_investments|floatformat:0 }}
         </p>
       </div>
     </div>
@@ -148,8 +154,35 @@
         </svg>
       </div>
     </div>
-    <div class="text-2xl font-bold text-white">
+    <div class="text-2xl font-bold text-white mb-6">
       ₹{{ total_expense|floatformat:2 }}
+    </div>
+
+    <!-- Divider -->
+    <div class="h-px bg-slate-700 my-4"></div>
+
+    <!-- Investments Section -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-slate-400 text-sm font-medium">Total Investments</h3>
+      <div class="p-2 bg-emerald-500/10 rounded-lg">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-emerald-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+          />
+        </svg>
+      </div>
+    </div>
+    <div class="text-2xl font-bold text-white">
+      ₹{{ total_investment|floatformat:2 }}
     </div>
   </div>
 </div>

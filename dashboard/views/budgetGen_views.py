@@ -10,15 +10,20 @@ from dashboard.models import Transaction
 def get_monthly_data(user):
     now = timezone.now()
     
-    # 1. Get Income (Sum of INCOME transactions for current month)
-    income_agg = Transaction.objects.filter(
+    # 1. Get Income (Fixed Profile Income + Variable Income Transactions)
+    try:
+        fixed_income = user.profile.monthly_income or Decimal(0)
+    except Exception:
+        fixed_income = Decimal(0)
+        
+    variable_income = Transaction.objects.filter(
         user=user,
         transaction_type='INCOME',
         date__month=now.month,
         date__year=now.year
-    ).aggregate(Sum('amount'))
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
     
-    income = income_agg['amount__sum'] or Decimal(0)
+    income = fixed_income + variable_income
     
     # 2. Get All Expenses for Current Month
     expenses = Transaction.objects.filter(
@@ -47,15 +52,52 @@ def get_monthly_data(user):
     
     # 4. Calculate Buckets
     spent_needs = expenses.filter(category__in=needs_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    saved_savings = expenses.filter(category__in=savings_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+    expenses_savings = expenses.filter(category__in=savings_list).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
     
-    # 5. Calculate Wants
+    # 5. Calculate Wants (Everything that is not Need or explicit Savings Expense)
     total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
-    spent_wants = total_expenses - spent_needs - saved_savings
+    spent_wants = total_expenses - spent_needs - expenses_savings
     
     # Safeguard against negative math
     spent_wants = max(Decimal(0), spent_wants)
+
+    # 6. Calculate Total Savings (Dynamic Balance + Monthly Investments)
     
+    # A. Calculate Current Month Investments (for the "Investments" part of Savings)
+    monthly_investments = Transaction.objects.filter(
+        user=user,
+        transaction_type='INVESTMENT',
+        date__month=now.month,
+        date__year=now.year
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+
+    # B. Calculate Real-Time Wallet Balance (mimics dashboard logic)
+    try:
+        initial_balance = user.profile.cash_balance or Decimal(0)
+    except Exception:
+        initial_balance = Decimal(0)
+
+    # Total Internal Income
+    total_income_internal = Transaction.objects.filter(
+        user=user, 
+        transaction_type='INCOME', 
+        is_external=False
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+
+    # Total Internal Expenses (Expense + Investment)
+    total_expense_internal = Transaction.objects.filter(
+        user=user, 
+        transaction_type__in=['EXPENSE', 'INVESTMENT'], 
+        is_external=False
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+
+    current_wallet_balance = initial_balance + total_income_internal - total_expense_internal
+    
+    # C. Final Savings Metric
+    saved_savings = current_wallet_balance + monthly_investments
+    
+    # Debug print
+    print(f"Savings Calc: Balance({current_wallet_balance}) + Inv({monthly_investments}) = {saved_savings}")
     return income, spent_needs, spent_wants, saved_savings
 
 # --- STRATEGY HELPERS ---
@@ -144,7 +186,7 @@ def budget_generator_view(request):
         'spent_needs': spent_needs,
         'spent_wants': spent_wants,
         'saved_savings': saved_savings,
-        'spent_total': spent_needs + spent_wants + saved_savings,
+        'spent_total': spent_needs + spent_wants,
         'left_needs': strategy['needs_budget'] - spent_needs,
         'left_wants': wants_remaining,
         'left_savings': left_savings,
