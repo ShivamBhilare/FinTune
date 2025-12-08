@@ -4,6 +4,7 @@ from dashboard.views import transactions_views
 from dashboard.views import addTransaction_views
 from dashboard.views import budgetGen_views
 from dashboard.views import patternDetection_views
+from dashboard.views import goalsimulator_views
 app_name = 'dashboard'
 
 urlpatterns = [
@@ -15,4 +16,9 @@ urlpatterns = [
     path('save-confirmed/', addTransaction_views.save_confirmed_transactions, name='save_confirmed'),
     path('budget-generator/', budgetGen_views.budget_generator_view, name='budget_generator'),
     path('pattern-detection/', patternDetection_views.pattern_detection, name='pattern_detection'),
+    # Goal Simulator
+    path('goals/', goalsimulator_views.goal_tracker_view, name='goal_tracker'),
+    path('goals/save/', goalsimulator_views.save_goal, name='save_goal'),
+    path('goals/delete/<int:pk>/', goalsimulator_views.delete_goal, name='delete_goal'),
+    path('goals/calculate/', goalsimulator_views.calculate_goal_projection, name='calculate_goal'),
 ]
