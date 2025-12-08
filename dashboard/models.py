@@ -53,3 +53,22 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.vendor_name} - {self.amount}"
+
+class FinancialGoal(models.Model):
+    RISK_PROFILES = [
+        ('LOW', 'Low (Conservative)'),
+        ('MEDIUM', 'Medium (Balanced)'),
+        ('HIGH', 'High (Aggressive)'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='financial_goals')
+    name = models.CharField(max_length=100)
+    target_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    current_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    monthly_contribution = models.DecimalField(max_digits=10, decimal_places=2)
+    target_date = models.DateField()
+    risk_profile = models.CharField(max_length=10, choices=RISK_PROFILES, default='MEDIUM')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_risk_profile_display()})"
