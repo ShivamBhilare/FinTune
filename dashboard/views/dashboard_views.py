@@ -7,6 +7,8 @@ from datetime import timedelta
 from .healthScore_views import get_health_score_context
 
 
+from dashboard.utils import get_financial_persona, get_most_active_day, get_recurring_stats
+
 @login_required
 def home(request):
     user = request.user
@@ -62,6 +64,11 @@ def home(request):
 
     recent_transactions = Transaction.objects.filter(user=user).order_by('-date')[:5]
     
+    # Pattern Detection Data
+    persona_data = get_financial_persona(user)
+    most_active_day = get_most_active_day(user)
+    _, total_recurring = get_recurring_stats(user)
+
     context = {
         'total_balance': balance,
         'total_income': income,
@@ -69,7 +76,12 @@ def home(request):
         'total_investment': current_month_investment,
         'recent_transactions': recent_transactions,
         'percentage_change': percentage_change,
-        'balance_is_positive': percentage_change >= 0
+        'balance_is_positive': percentage_change >= 0,
+        'persona': persona_data['persona'],
+        'persona_desc': persona_data['persona_desc'],
+        'persona_icon': persona_data['icon'],
+        'most_active_day': most_active_day,
+        'total_recurring': total_recurring
     }
     
     # Add Health Score Context
