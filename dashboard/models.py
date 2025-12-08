@@ -3,11 +3,16 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Transaction(models.Model):
-    # Enums
-    TRANSACTION_TYPES = [('INCOME', 'Income'), ('EXPENSE', 'Expense')]
+    # 1. Add INVESTMENT to types
+    TRANSACTION_TYPES = [
+        ('INCOME', 'Income'), 
+        ('EXPENSE', 'Expense'), 
+        ('INVESTMENT', 'Investment') # New Type
+    ]
+    
     INPUT_SOURCES = [('MANUAL', 'Manual'), ('VOICE', 'Voice'), ('CAMERA', 'Camera')]
     
-    # Updated Categories per request
+    # 2. Add 'Investment' to categories so the dropdown has it
     CATEGORIES = [
         ('Housing', 'Housing'),
         ('Utilities', 'Utilities'),
@@ -19,6 +24,7 @@ class Transaction(models.Model):
         ('Clothing & Apparel', 'Clothing & Apparel'),
         ('Groceries', 'Groceries'),
         ('Tax', 'Tax'),
+        ('Investment', 'Investment'), # <--- Added this
         ('Other', 'Other')
     ]
 
@@ -27,14 +33,21 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     vendor_name = models.CharField(max_length=100, help_text="e.g. Starbucks, Amazon")
     
-    # Using the display name as value for simplicity in AI mapping, 
-    # but strictly max_length needs to accommodate the longest string
     category = models.CharField(max_length=50, choices=CATEGORIES, default='Other')
-    transaction_type = models.CharField(max_length=7, choices=TRANSACTION_TYPES, default='EXPENSE')
-    date = models.DateTimeField(default=timezone.now)
     
-    description = models.CharField(max_length=255, blank=True, null=True) # Added for AI descriptions
+    # CRITICAL FIX: Increased max_length to 20 (was 7) to hold 'INVESTMENT'
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES, default='EXPENSE')
+    
+    date = models.DateTimeField(default=timezone.now)
+    description = models.CharField(max_length=255, blank=True, null=True)
     input_source = models.CharField(max_length=10, choices=INPUT_SOURCES, default='MANUAL')
+
+
+    # 3. New Logic Field: External Transactions
+    is_external = models.BooleanField(
+        default=False,
+        verbose_name="External Transaction (Don't affect Balance)"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

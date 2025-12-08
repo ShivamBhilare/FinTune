@@ -5,77 +5,98 @@ from dashboard.models import Transaction
 
 def get_health_score_context(user):
     now = timezone.now()
+    
+    # 1. Income (Fixed Profile Income + Variable Income Transactions)
+    try:
+        fixed_income = user.profile.monthly_income or Decimal(0)
+    except Exception:
+        fixed_income = Decimal(0)
 
-    # --- 1. Get User Income for CURRENT MONTH to simulate "Monthly Income" ---
-    # Since we don't have a Profile model with a fixed salary, we sum actual income.
-    monthly_income = Transaction.objects.filter(
+    # Fetch variable income (e.g., side hustles, gifts) from transactions
+    variable_income = Transaction.objects.filter(
         user=user,
         transaction_type='INCOME',
         date__month=now.month,
         date__year=now.year
     ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
 
-    
-    # Filter: Current User + Expense Type + Current Month + Current Year
-    current_month_expenses = Transaction.objects.filter(
+    monthly_income = fixed_income + variable_income
+
+    # 2. Expenses (Include ALL, even external)
+    monthly_expenses = Transaction.objects.filter(
         user=user,
         transaction_type='EXPENSE',
         date__month=now.month,
-        date__year=now.year
+        date__year=now.year,
+        # is_external=False  <-- Commented out to include external expenses
     ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
 
-    # --- 3. The Health Score Logic (0-100) ---
+    # 3. Investments (Include ALL, even external)
+    monthly_investments = Transaction.objects.filter(
+        user=user,
+        transaction_type='INVESTMENT',
+        date__month=now.month,
+        date__year=now.year,
+        # is_external=False  <-- Commented out to include external investments
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal(0)
+
+    # --- ADVANCED HEALTH SCORE LOGIC (Total 100) ---
     health_score = 0
     
     if monthly_income > 0:
-        # Metric A: Savings Rate (Target: Save 20% of income)
-        savings = monthly_income - current_month_expenses
-        savings_rate = (savings / monthly_income) * 100
-        
-        # Scoring Rules for Savings
-        if savings_rate >= 20:
-            score_savings = 50  # Perfect score
-        elif savings_rate < 0:
-            score_savings = 0   # In Debt
+        # A. Burn Rate (40 Points): Expenses vs Income
+        # Goal: Keep expenses low (e.g. < 50% is perfect)
+        expense_ratio = (monthly_expenses / monthly_income) * 100
+        if expense_ratio <= 50:
+            score_expense = 40  # Perfect (Living well within means)
+        elif expense_ratio >= 100:
+            score_expense = 0   # Broke
         else:
-            score_savings = (savings_rate / 20) * 50 # Scaled score
+            # Linear decay: 50% -> 40pts, 100% -> 0pts
+            # Range is 50. Points range is 40. Scale factor = 40/50 = 0.8
+            score_expense = 40 - ((expense_ratio - 50) * Decimal(0.8))
 
-        # Metric B: Expense Control (Target: Spend < 80% of income)
-        spend_ratio = (current_month_expenses / monthly_income) * 100
-        
-        if spend_ratio > 100:
-            score_control = 0
-        elif spend_ratio < 50:
-            score_control = 50
+        # B. Investment Rate (40 Points): Building Wealth
+        # Goal: Invest 20% of income
+        invest_ratio = (monthly_investments / monthly_income) * 100
+        if invest_ratio >= 20:
+            score_invest = 40 # Perfect
         else:
-            # If you spend 80%, you get 20pts. If you spend 50%, you get 50pts.
-            score_control = 50 - (spend_ratio - 50)
-            
-        health_score = int(score_savings + max(0, score_control))
-        
-        # Clamp score between 0 and 100
+            # Scale: 0% -> 0pts, 20% -> 40pts
+            score_invest = (invest_ratio / 20) * 40
+
+        # C. Cash Flow (20 Points): Positive Net Flow
+        # Net Flow = Income - Expenses - Investments
+        net_flow = monthly_income - monthly_expenses - monthly_investments
+        if net_flow >= 0:
+            score_cashflow = 20
+        else:
+            score_cashflow = 0 # Deficit spending
+
+        health_score = int(score_expense + score_invest + score_cashflow)
+        # Clamp to 100 max
         health_score = max(0, min(100, health_score))
 
-    # --- 4. Determine UI Colors & Messages ---
+    # --- UI Formatting ---
     if health_score >= 80:
-        score_color = "text-emerald-400" # Green
+        score_color = "text-emerald-400"
         progress_color = "bg-emerald-500"
-        message = "Excellent! You're a master."
+        message = "Excellent! You're a Wealth Builder."
     elif health_score >= 50:
-        score_color = "text-yellow-400" # Yellow
+        score_color = "text-yellow-400"
         progress_color = "bg-yellow-500"
-        message = "Good, but watch your spending."
+        message = "Good, but try to boost investments."
     else:
-        score_color = "text-red-400" # Red
+        score_color = "text-red-400"
         progress_color = "bg-red-500"
-        message = "Critical! Immediate action needed."
+        message = "Critical! Your expenses are too high."
 
     return {
         'health_score': health_score,
-        'score_color': score_color,     # For text
-        'progress_color': progress_color, # For progress bar
+        'score_color': score_color,
+        'progress_color': progress_color,
         'message': message,
         'monthly_income': monthly_income,
-        'current_expenses': current_month_expenses,
-        'savings': monthly_income - current_month_expenses
+        'current_expenses': monthly_expenses,
+        'monthly_investments': monthly_investments
     }

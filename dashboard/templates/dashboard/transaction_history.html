@@ -16,6 +16,7 @@
                     <th class="px-6 py-4">Date</th>
                     <th class="px-6 py-4">Vendor</th>
                     <th class="px-6 py-4">Category</th>
+                    <th class="px-6 py-4">Scope</th>
                     <th class="px-6 py-4">Source</th>
                     <th class="px-6 py-4 text-right">Amount</th>
                 </tr>
@@ -40,6 +41,17 @@
                         </span>
                     </td>
                     <td class="px-6 py-4">
+                        {% if transaction.is_external %}
+                        <div class="flex items-center gap-1 text-xs font-medium text-slate-400">
+                            <i class="fas fa-globe"></i> External
+                        </div>
+                        {% else %}
+                        <div class="flex items-center gap-1 text-xs font-medium text-emerald-400">
+                            <i class="fas fa-wallet"></i> Wallet
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
                         {% if transaction.input_source == 'VOICE' %}
                         <i class="fas fa-microphone text-green-400" title="Voice AI"></i>
                         {% elif transaction.input_source == 'IMAGE' %}
@@ -50,8 +62,12 @@
                     </td>
                     <td
                         class="px-6 py-4 text-right font-bold text-base
-                        {% if transaction.transaction_type == 'INCOME' %}text-green-400{% else %}text-white{% endif %}">
-                        {% if transaction.transaction_type == 'INCOME' %}+{% else %}-{% endif %}₹
+                        {% if transaction.transaction_type == 'INCOME' %}text-green-400
+                        {% elif transaction.transaction_type == 'INVESTMENT' %}text-blue-400
+                        {% else %}text-white{% endif %}">
+                        {% if transaction.transaction_type == 'INCOME' %}+
+                        {% elif transaction.transaction_type == 'INVESTMENT' %}-
+                        {% else %}-{% endif %}₹
                         {{ transaction.amount|floatformat:2 }}
                     </td>
                 </tr>

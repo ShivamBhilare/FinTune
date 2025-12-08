@@ -22,23 +22,34 @@ def home(request):
     except:
         initial_balance = 0
 
-    income = Transaction.objects.filter(user=user, transaction_type='INCOME').aggregate(Sum('amount'))['amount__sum'] or 0
-    expense = Transaction.objects.filter(user=user, transaction_type='EXPENSE').aggregate(Sum('amount'))['amount__sum'] or 0
+    # Exclude external transactions from Wallet Balance
+    income = Transaction.objects.filter(user=user, transaction_type='INCOME', is_external=False).aggregate(Sum('amount'))['amount__sum'] or 0
+    # Include INVESTMENT in expenses for balance calculation
+    expense = Transaction.objects.filter(user=user, transaction_type__in=['EXPENSE', 'INVESTMENT'], is_external=False).aggregate(Sum('amount'))['amount__sum'] or 0
     balance = initial_balance + income - expense
 
     # Calculate Current Month Expense for Display
     now = timezone.now()
     current_month_expense = Transaction.objects.filter(
         user=user, 
-        transaction_type='EXPENSE', 
+        transaction_type__in=['EXPENSE'], 
         date__month=now.month, 
         date__year=now.year
     ).aggregate(Sum('amount'))['amount__sum'] or 0
     
+    # Calculate Current Month Expense for Display
+    now = timezone.now()
+    current_month_investment = Transaction.objects.filter(
+        user=user, 
+        transaction_type='INVESTMENT', 
+        date__month=now.month, 
+        date__year=now.year
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
     # Previous Month Stats (30 days ago)
     last_month = now - timedelta(days=30)
-    income_last = Transaction.objects.filter(user=user, date__lt=last_month, transaction_type='INCOME').aggregate(Sum('amount'))['amount__sum'] or 0
-    expense_last = Transaction.objects.filter(user=user, date__lt=last_month, transaction_type='EXPENSE').aggregate(Sum('amount'))['amount__sum'] or 0
+    income_last = Transaction.objects.filter(user=user, date__lt=last_month, transaction_type='INCOME', is_external=False).aggregate(Sum('amount'))['amount__sum'] or 0
+    expense_last = Transaction.objects.filter(user=user, date__lt=last_month, transaction_type__in=['EXPENSE', 'INVESTMENT'], is_external=False).aggregate(Sum('amount'))['amount__sum'] or 0
     balance_last = initial_balance + income_last - expense_last
     
     # Calculate Percentage Change
@@ -61,7 +72,8 @@ def home(request):
     context = {
         'total_balance': balance,
         'total_income': income,
-        'total_expense': current_month_expense, # Using current month expense as requested
+        'total_expense': current_month_expense,
+        'total_investment': current_month_investment,
         'recent_transactions': recent_transactions,
         'percentage_change': percentage_change,
         'balance_is_positive': percentage_change >= 0,
