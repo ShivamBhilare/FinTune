@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Side Quests | FinTune{% endblock %}
+
+{% block content %}
+<div class="mb-8" x-data="gamification()">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-white flex items-center gap-2">
+                <i class="fas fa-gamepad text-indigo-500"></i> Side Quests
+            </h1>
+            <p class="text-slate-400 mt-1">Level up your financial fitness!</p>
+        </div>
+        
+        <div class="flex items-center gap-4 bg-slate-800 p-3 rounded-lg border border-slate-700">
+             <div class="flex items-center gap-2">
+                 <div class="text-yellow-400 font-bold"><i class="fas fa-coins"></i> <span x-text="coins"></span></div>
+             </div>
+             <div class="h-4 w-px bg-slate-600"></div>
+             <div class="flex items-center gap-2">
+                 <div class="text-indigo-400 font-bold"><i class="fas fa-bolt"></i> <span x-text="xp"></span> XP</div>
+             </div>
+             <div class="h-4 w-px bg-slate-600"></div>
+             <div class="flex items-center gap-2">
+                 <div class="text-orange-400 font-bold"><i class="fas fa-fire"></i> <span x-text="streak"></span> Day Streak</div>
+             </div>
+        </div>
+    </div>
+
+    <!-- LEVEL PROGRESS -->
+    <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl mb-8 relative overflow-hidden">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-bold text-white">Level <span x-text="level"></span></h2>
+            <span class="text-sm text-slate-400" x-text="`${xp} / ${nextLevelXp} XP`"></span>
+        </div>
+        <div class="w-full bg-slate-700 rounded-full h-4 relative">
+             <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-4 rounded-full transition-all duration-1000"
+                  :style="`width: ${Math.min((xp / nextLevelXp) * 100, 100)}%`">
+             </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- QUEST BOARD -->
+        <div class="lg:col-span-2 space-y-6">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                 <i class="fas fa-scroll text-indigo-400"></i> Active Quests
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <template x-for="challenge in challenges" :key="challenge.id">
+                    <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-lg relative group hover:-translate-y-1 transition-transform duration-300">
+                        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i :class="challenge.icon" class="text-6xl text-white"></i>
+                        </div>
+                        
+                        <div class="relative z-10">
+                            <span class="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-slate-700 text-slate-300 mb-2 inline-block" x-text="challenge.rarity"></span>
+                            <h4 class="text-lg font-bold text-white mb-1" x-text="challenge.title"></h4>
+                            <p class="text-sm text-slate-400 mb-4 h-10" x-text="challenge.description"></p>
+                            
+                            <div class="flex items-center gap-3 mb-4 text-xs font-bold">
+                                <span class="text-indigo-400"><i class="fas fa-plus"></i> <span x-text="challenge.rewardXP"></span> XP</span>
+                                <span class="text-yellow-500"><i class="fas fa-coins"></i> <span x-text="challenge.rewardCoins"></span> Coins</span>
+                            </div>
+                            
+                            <!-- Progress Bar for Active Quest -->
+                            <div x-show="activeChallengeId === challenge.id && activeProgress" class="mb-4">
+                                <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+                                    <span>Progress</span>
+                                    <span>
+                                        <span x-text="activeProgress.current"></span> / <span x-text="activeProgress.target"></span>
+                                    </span>
+                                </div>
+                                <div class="w-full bg-slate-700 rounded-full h-2">
+                                     <div class="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                                          :style="`width: ${activeProgress.percentage}%`">
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Claim Button (Enabled only if 100%) -->
+                            <button 
+                                x-show="activeChallengeId === challenge.id && activeProgress && activeProgress.percentage >= 100"
+                                @click="completeChallenge(challenge)"
+                                class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 animate-bounce">
+                                <i class="fas fa-check-circle"></i> Claim Reward
+                            </button>
+                            
+                            <!-- In Progress Button (Disabled) -->
+                            <button 
+                                x-show="activeChallengeId === challenge.id && activeProgress && activeProgress.percentage < 100"
+                                disabled
+                                class="w-full bg-slate-600 text-slate-400 font-bold py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                                <i class="fas fa-spinner fa-spin"></i> In Progress
+                            </button>
+                            
+                            <button 
+                                x-show="!activeChallengeId && !isCompleted(challenge.id)"
+                                @click="acceptChallenge(challenge.id)"
+                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition-colors">
+                                Accept Quest
+                            </button>
+                            
+                            <div x-show="isCompleted(challenge.id)" class="w-full bg-slate-700/50 text-green-400 font-bold py-2 rounded-lg text-center border border-green-500/20">
+                                <i class="fas fa-check"></i> Completed
+                            </div>
+                            
+                            <div x-show="activeChallengeId && activeChallengeId !== challenge.id && !isCompleted(challenge.id)" class="w-full bg-slate-700/50 text-slate-500 font-bold py-2 rounded-lg text-center">
+                                <i class="fas fa-lock"></i> Locked
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        
+        <!-- LEADERBOARD & STATS -->
+        <div class="space-y-6">
+             <div class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl">
+                <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-trophy text-yellow-400"></i> Leaderboard
+                </h3>
+                
+                <div class="space-y-3" x-show="leaderboard.length > 0">
+                    <template x-for="(user, index) in leaderboard" :key="index">
+                        <div class="flex items-center justify-between p-2 rounded bg-slate-700/30" :class="{'border border-indigo-500/50': user.name === '{{ request.user.username }}'}">
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold text-slate-400 w-4" x-text="index + 1"></span>
+                                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs" x-text="user.name.substring(0,2).toUpperCase()"></div>
+                                <div>
+                                    <p class="text-sm font-bold text-white" x-text="user.name"></p>
+                                    <p class="text-[10px] text-slate-400">Lvl <span x-text="user.level"></span></p>
+                                </div>
+                            </div>
+                            <span class="text-sm font-bold text-indigo-400" x-text="user.xp + ' XP'"></span>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="leaderboard.length === 0" class="text-slate-500 text-center py-4">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+{{ gamification_stats|json_script:"gamification-data" }}
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('gamification', () => ({
+            ...JSON.parse(document.getElementById('gamification-data').textContent),
+            leaderboard: [],
+            
+            // challenges: [ ... ] // Removed, now coming from backend
+
+            init() {
+                this.fetchLeaderboard();
+            },
+
+            isCompleted(id) {
+                return this.completedChallenges.includes(id);
+            },
+
+
+            async fetchLeaderboard() {
+                try {
+                    const res = await fetch("{% url 'dashboard:leaderboard' %}");
+                    const data = await res.json();
+                    this.leaderboard = data.leaderboard;
+                } catch(e) {
+                    console.error("Leaderboard error", e);
+                }
+            },
+
+            async acceptChallenge(id) {
+                try {
+                    // key lookup trick to generate base url
+                    let url = "{% url 'dashboard:accept_challenge' 'CHALLENGE_ID' %}".replace('CHALLENGE_ID', id);
+                    
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    
+                    if (!res.ok) {
+                        throw new Error(`Server returned ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        this.activeChallengeId = id;
+                        this.activeProgress = data.active_progress; // Update Progress immediately
+                        // Toast success
+                        // Using a simple alert for now, or the store message if available. 
+                        // The base template has some notification logic? 
+                        // For now keep alert but more friendly
+                        alert("Quest Accepted! Good luck."); 
+                    } else {
+                        alert(data.message);
+                    }
+                } catch(e) {
+                    console.error("Accept Quest Error:", e);
+                    alert('Error accepting quest: ' + e.message);
+                }
+            },
+
+            async completeChallenge(challenge) {
+                try {
+                    const res = await fetch("{% url 'dashboard:complete_challenge' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            xp: challenge.rewardXP,
+                            coins: challenge.rewardCoins
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                         throw new Error(`Server returned ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    if(data.status === 'success') {
+                        this.xp = data.new_xp;
+                        this.coins = data.new_coins;
+                        this.level = data.new_level;
+                        this.activeChallengeId = "";
+                        this.completedChallenges.push(challenge.id);
+                        alert(`Quest Complete! +${challenge.rewardXP} XP`);
+                    } else {
+                        alert(data.message);
+                    }
+                } catch(e) {
+                    console.error("Complete Quest Error:", e);
+                    alert('Error completing quest: ' + e.message);
+                }
+            }
+        }))
+    })
+</script>
+{% endblock %}
