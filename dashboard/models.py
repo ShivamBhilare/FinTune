@@ -103,22 +103,19 @@ class GamificationProfile(models.Model):
     streak = models.IntegerField(default=0)
     level = models.IntegerField(default=1)
     
-    # Store active challenge ID (simple string/integer approach for now)
-    active_challenge_id = models.CharField(max_length=50, blank=True, null=True)
-    
-    # Store completed challenges as a JSON-like text or related model. 
-    # For simplicity, let's use a standard TextField storing comma-separated IDs 
-    # or a JSONField if we were sure about the DB support (SQLite/Postgres). 
-    # We'll use a text field for compatibility.
-    completed_challenges_ids = models.TextField(default="", blank=True) 
-
     last_streak_update = models.DateField(blank=True, null=True)
-
-    # New Fields for AI Quests
+    
+    # Daily Quests
     daily_quests = models.TextField(default="[]", blank=True, help_text="JSON list of daily quests")
     last_daily_quest_refresh = models.DateField(blank=True, null=True)
-    # Track when the current quest was accepted to verify actions *after* this time
-    challenge_accepted_at = models.DateTimeField(blank=True, null=True)
+    active_daily_challenge_id = models.TextField(default="[]", blank=True, null=True)
+    daily_challenge_accepted_at = models.DateTimeField(blank=True, null=True)
+
+    # Weekly Quests
+    weekly_quests = models.TextField(default="[]", blank=True, help_text="JSON list of weekly quests")
+    last_weekly_quest_refresh = models.DateField(blank=True, null=True)
+    active_weekly_challenge_id = models.TextField(default="[]", blank=True, null=True)
+    weekly_challenge_accepted_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} - Level {self.level}"

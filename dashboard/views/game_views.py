@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.utils import timezone
 from django.http import JsonResponse
-from dashboard.models import Transaction, GamificationProfile
+from dashboard.models import Transaction, GamificationProfile, QuestLog
 from auth_user.models import UserProfile
 from dashboard.utils_constants import NEEDS_CATEGORIES
 import json
@@ -77,11 +77,6 @@ def calculate_streak(user):
 
     if today_spend < daily_budget:
         # Check if yesterday was missed (to reset if not consecutive)
-        # Actually, simpler logic: 
-        # If we are checking today, and we haven't updated today:
-        # Did we miss yesterday? 
-        # If last_update < yesterday, then streak is broken -> set to 0 (or 1 if today is good)
-        
         last_update = game_profile.last_streak_update
         if last_update and (today_date - last_update).days > 1:
              game_profile.streak = 1 # Reset and start new
@@ -111,11 +106,13 @@ def gamification_view(request):
     # 1. Update Streak
     streak = calculate_streak(user)
     
-    # Load stored quests to check count
+    # Load stored quests - DAILY
     try:
-        stored_quests = json.loads(game_profile.daily_quests)
+        daily_quests = json.loads(game_profile.daily_quests)
+        if not isinstance(daily_quests, list):
+            daily_quests = []
     except:
-        stored_quests = []
+        daily_quests = []
 
     # 2. Daily Quest Refresh Logic
     # Refresh if:
@@ -123,29 +120,41 @@ def gamification_view(request):
     # b) We have fewer than 3 quests (Self-healing for falback/legacy data)
     now_date = timezone.localdate()
     
-    should_refresh = (game_profile.last_daily_quest_refresh != now_date) or (len(stored_quests) < 3)
+    should_refresh = (game_profile.last_daily_quest_refresh != now_date) or (len(daily_quests) < 3)
 
     if should_refresh:
         # Generate new AI quests (or fallback)
         new_quests = generate_personalized_quests(user)
         game_profile.daily_quests = json.dumps(new_quests)
         game_profile.last_daily_quest_refresh = now_date
+        
+        # ALWAYS clear active daily challenge on refresh
+        game_profile.active_daily_challenge_id = "" 
+        
         game_profile.save()
-        stored_quests = new_quests # Update local var for context
+        daily_quests = new_quests # Update local var for context
 
-    # 3. Calculate Progress for Active Quest
-    active_progress = None
-    if game_profile.active_challenge_id:
-        active_quest = next((q for q in stored_quests if q['id'] == game_profile.active_challenge_id), None)
+    # 3. Calculate Progress for Active Daily Quest
+    active_daily_progress = None
+    if game_profile.active_daily_challenge_id:
+        active_quest = next((q for q in daily_quests if str(q.get('id')) == str(game_profile.active_daily_challenge_id)), None)
         if active_quest:
-            active_progress = get_challenge_progress(
+            active_daily_progress = get_challenge_progress(
                 user, 
                 active_quest.get('type'), 
                 target_category=active_quest.get('target_category'),
                 target_amount=active_quest.get('target_amount'),
                 target_time=active_quest.get('target_time'),
-                start_time=game_profile.challenge_accepted_at
+                start_time=game_profile.daily_challenge_accepted_at
             )
+        else:
+            # Self-healing: Active ID exists but not in current list -> Clear it
+            game_profile.active_daily_challenge_id = ""
+            game_profile.save()
+
+    # Completed Challenges from QuestLog
+    completed_logs = QuestLog.objects.filter(user=user).order_by('-completed_at')[:20]
+    completed_ids = [log.quest_id for log in completed_logs]
 
     context = {
         'gamification_stats': {
@@ -154,10 +163,11 @@ def gamification_view(request):
             'level': calculate_level(game_profile.xp),
             'streak': streak,
             'nextLevelXp': calc_xp_for_next_level(calculate_level(game_profile.xp)),
-            'activeChallengeId': game_profile.active_challenge_id or "",
-            'activeProgress': active_progress, # New Data
-            'completedChallenges': game_profile.completed_challenges_ids.split(',') if game_profile.completed_challenges_ids else [],
-            'challenges': stored_quests # pass local var
+            # MAP TO FRONTEND EXPECTED NAMES
+            'activeChallengeId': game_profile.active_daily_challenge_id or "",
+            'activeProgress': active_daily_progress, 
+            'completedChallenges': completed_ids,
+            'challenges': daily_quests # Frontend expects 'challenges'
         }
     }
     return render(request, 'dashboard/gamification.html', context)
@@ -169,35 +179,48 @@ def accept_challenge(request, challenge_id):
             user = request.user
             gp, _ = GamificationProfile.objects.get_or_create(user=user)
             
-            if gp.active_challenge_id:
-                return JsonResponse({'status': 'error', 'message': 'You already have an active quest!'})
-                
-            gp.active_challenge_id = challenge_id
-            gp.challenge_accepted_at = timezone.now() # START TIME
-            gp.save()
-            
-            # Calculate Initial Progress (Likely 0, but good to be explicit)
-            active_progress = None
+            # Check if it's a daily quest
+            daily_quests = []
             try:
-                stored_quests = json.loads(gp.daily_quests)
-                active_quest = next((q for q in stored_quests if q['id'] == challenge_id), None)
+                daily_quests = json.loads(gp.daily_quests)
+                if not isinstance(daily_quests, list): daily_quests = []
+            except:
+                pass
+            
+            # Simple check: is this ID in daily quests?
+            is_daily = any(str(q.get('id')) == str(challenge_id) for q in daily_quests)
+            
+            if is_daily:
+                if gp.active_daily_challenge_id:
+                     # Allow switching? Or strict? 
+                     # Frontend says "You already have an active quest!"
+                     return JsonResponse({'status': 'error', 'message': 'You already have an active daily quest!'})
+                
+                gp.active_daily_challenge_id = challenge_id
+                gp.daily_challenge_accepted_at = timezone.now()
+                gp.save()
+                
+                # Setup progress return
+                active_progress = None
+                active_quest = next((q for q in daily_quests if str(q.get('id')) == str(challenge_id)), None)
                 if active_quest:
                     active_progress = get_challenge_progress(
-                        user, 
-                        active_quest.get('type'), 
+                        user,
+                        active_quest.get('type'),
                         target_category=active_quest.get('target_category'),
                         target_amount=active_quest.get('target_amount'),
                         target_time=active_quest.get('target_time'),
-                        start_time=gp.challenge_accepted_at
+                        start_time=gp.daily_challenge_accepted_at
                     )
-            except:
-                pass
+                
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': 'Daily Quest Accepted!',
+                    'active_progress': active_progress
+                })
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Quest not found in daily pool.'})
 
-            return JsonResponse({
-                'status': 'success', 
-                'message': 'Quest Accepted!',
-                'active_progress': active_progress
-            })
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Invalid Method'}, status=400)
@@ -209,16 +232,20 @@ def complete_challenge(request):
             user = request.user
             gp = user.gamification_profile
             
-            # Find the active quest def
+            # Assume we are verifying the active DAILY queset
+            if not gp.active_daily_challenge_id:
+                 return JsonResponse({'status': 'error', 'message': 'No active daily quest.'})
+
             try:
                 daily_quests = json.loads(gp.daily_quests)
+                if not isinstance(daily_quests, list): daily_quests = []
             except:
                 daily_quests = []
                 
-            active_quest = next((q for q in daily_quests if q['id'] == gp.active_challenge_id), None)
+            active_quest = next((q for q in daily_quests if str(q['id']) == str(gp.active_daily_challenge_id)), None)
             
             if not active_quest:
-                return JsonResponse({'status': 'error', 'message': 'Active quest not found in daily pool.'})
+                return JsonResponse({'status': 'error', 'message': 'Active quest data not found.'})
             
             # VERIFY LOGIC
             is_valid = verify_challenge(
@@ -227,18 +254,13 @@ def complete_challenge(request):
                 target_category=active_quest.get('target_category'),
                 target_amount=active_quest.get('target_amount'),
                 target_time=active_quest.get('target_time'),
-                start_time=gp.challenge_accepted_at # Pass start time
+                start_time=gp.daily_challenge_accepted_at
             )
-            
-            # Logic Note: NO_SPEND quests fail if they find a transaction.
-            # verify_challenge returns True if Success (No Validation failure).
-            # But wait: verify_challenge for NO_SPEND returns: "not exists" -> True if success.
             
             if not is_valid:
                 return JsonResponse({'status': 'error', 'message': 'Quest conditions not met yet! Check your transactions.'})
                 
             # --- 4. HARDENING: QUEST HISTORY & LOCKING ---
-            from dashboard.models import QuestLog, Transaction
             
             # Create QuestLog (Permanent History)
             QuestLog.objects.create(
@@ -246,14 +268,14 @@ def complete_challenge(request):
                 quest_id=active_quest['id'],
                 title=active_quest['title'],
                 description=active_quest['description'],
-                xp_earned=active_quest['rewardXP'],
-                coins_earned=active_quest['rewardCoins'],
+                xp_earned=active_quest.get('rewardXP', 0),
+                coins_earned=active_quest.get('rewardCoins', 0),
                 quest_type=active_quest.get('type')
             )
             
             # Lock Transactions (Anti-Cheat)
             if active_quest.get('type') in ['SAVE_AMOUNT', 'TRANSACTION_BEFORE']:
-                 txns = Transaction.objects.filter(user=user, date__gte=gp.challenge_accepted_at)
+                 txns = Transaction.objects.filter(user=user, date__gte=gp.daily_challenge_accepted_at)
                  if active_quest.get('type') == 'SAVE_AMOUNT':
                      verifying_txns = txns.filter(category__in=['Savings', 'Investment'])
                      for t in verifying_txns:
@@ -268,22 +290,17 @@ def complete_challenge(request):
                               break
 
             # Award Rewards
-            gp.xp += active_quest['rewardXP']
-            gp.coins += active_quest['rewardCoins']
+            gp.xp += active_quest.get('rewardXP', 0)
+            gp.coins += active_quest.get('rewardCoins', 0)
             
             # Check Level Up
             old_level = gp.level
             new_level = calculate_level(gp.xp)
             if new_level > old_level:
                 gp.level = new_level
-                # Could add specific notification here
             
-            gp.active_challenge_id = "" # Clear active
-            
-            # Append to completed
-            completed = gp.completed_challenges_ids.split(',') if gp.completed_challenges_ids else []
-            completed.append(active_quest['id'])
-            gp.completed_challenges_ids = ",".join(completed)
+            gp.active_daily_challenge_id = "" # Clear active
+            gp.daily_challenge_accepted_at = None
             
             gp.save()
             
