@@ -81,3 +81,104 @@ def verify_challenge(user, challenge_type, target_category=None, target_amount=N
     """
     progress = get_challenge_progress(user, challenge_type, target_category, target_amount, target_time, start_time)
     return progress['is_completed']
+
+
+# --- GAMIFICATION LOGIC ---
+from .models import GamificationProfile, DailyQuest
+
+def check_daily_streak(user):
+    """
+    Checks if the user missed a day. If so, resets streak.
+    Should be called on dashboard load.
+    """
+    try:
+        profile = user.gamification_profile
+        today = timezone.localdate()
+        
+        if profile.last_streak_update:
+            delta = (today - profile.last_streak_update).days
+            # If delta is 1, they last completed yesterday (Safe).
+            # If delta is 0, they last completed today (Safe).
+            # If delta > 1, they missed a day (Reset).
+            if delta > 1:
+                profile.current_streak = 0
+                profile.save()
+    except Exception:
+        pass
+
+def update_quest_status(user):
+    """
+    Updates status for ACTIVE challenges.
+    - Checks if FAILED (e.g. spent money in No-Spend challenge).
+    - Updates Progress (Days passed without failure).
+    - Completes if Duration met.
+    """
+    quests = DailyQuest.objects.filter(user=user, status='ACTIVE')
+    profile, _ = GamificationProfile.objects.get_or_create(user=user)
+    today = timezone.localdate()
+    
+    for quest in quests:
+        # 1. Check for FAILURE Check
+        # For No-Spend, if ANY transaction exists in forbidden category since start_date, it flows to FAILED.
+        if 'NO_SPEND' in quest.quest_type:
+            target_cat = quest.target_variable.get('target_category')
+            # Check all txns from start_date (precise time) to now
+            bad_txns = Transaction.objects.filter(
+                user=user, 
+                date__gte=quest.start_date, # PRECISE TIMESTAMP CHECK
+                category__iexact=target_cat
+            )
+            
+            if bad_txns.exists():
+                quest.status = 'FAILED'
+                quest.save()
+                continue
+        
+        # 2. Update Progress (Time-based or Accumulation)
+        if quest.quest_type in ['NO_SPEND_CATEGORY', 'NO_SPEND_VENDOR', 'STREAK_KEEPER']:
+            # Progress = Days elapsed since start
+            # Convert start_date (datetime) to date for subtraction
+            start_local_date = timezone.localdate(quest.start_date)
+            days_elapsed = (today - start_local_date).days
+            quest.current_progress = max(0, days_elapsed)
+            
+            # Check Completion
+            if days_elapsed >= quest.duration_days:
+                quest.status = 'COMPLETED'
+                # Award
+                profile.points += quest.reward_points
+                profile.total_xp += quest.reward_xp
+                # Update Level
+                profile.level = 1 + (profile.total_xp // 1000)
+                profile.save()
+            
+            quest.save()
+
+        elif quest.quest_type == 'SAVE_AMOUNT':
+            # Accumulate savings since start
+            saved_so_far = Transaction.objects.filter(
+                user=user,
+                date__gte=quest.start_date, # PRECISE TIMESTAMP CHECK
+                category__in=['Savings', 'Investment']
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            # Here progress depends on Amount, not Days? 
+            # Or is it "Save X per day"? 
+            # The current AI prompt says "Save X amount". 
+            # Let's treat progress as % of amount for the bar?
+            # But the model field `current_progress` is Integer (Days).
+            # This is a mismatch. Let's hack it: 
+            # For SAVE, `current_progress` stores the % (0-100) temporarily or we stick to duration?
+            # If the challenge is "Save 500 in 3 days", we check if 500 is met within 3 days.
+            target = quest.target_variable.get('amount', 0)
+            if saved_so_far >= target:
+                quest.status = 'COMPLETED'
+                profile.points += quest.reward_points
+                profile.total_xp += quest.reward_xp
+                profile.level = 1 + (profile.total_xp // 1000)
+                profile.save()
+            elif (today - timezone.localdate(quest.start_date)).days >= quest.duration_days:
+                # Time run out without hitting target
+                quest.status = 'FAILED'
+            
+            quest.save()

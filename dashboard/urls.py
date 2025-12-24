@@ -5,7 +5,8 @@ from dashboard.views import addTransaction_views
 from dashboard.views import budgetGen_views
 from dashboard.views import patternDetection_views
 from dashboard.views import goalsimulator_views
-from dashboard.views import game_views
+from dashboard.views import gamification_views
+
 app_name = 'dashboard'
 
 urlpatterns = [
@@ -23,8 +24,6 @@ urlpatterns = [
     path('goals/delete/<int:pk>/', goalsimulator_views.delete_goal, name='delete_goal'),
     path('goals/calculate/', goalsimulator_views.calculate_goal_projection, name='calculate_goal'),
     # Gamification
-    path('gamification/', game_views.gamification_view, name='gamification'),
-    path('gamification/accept/<str:challenge_id>/', game_views.accept_challenge, name='accept_challenge'),
-    path('gamification/complete/', game_views.complete_challenge, name='complete_challenge'),
-    path('gamification/leaderboard/', game_views.leaderboard_view, name='leaderboard'),
+    path('gamification/', gamification_views.gamification_view, name='gamification'),
+    path('gamification/generate/', gamification_views.generate_challenge_view, name='generate_challenge'),
 ]

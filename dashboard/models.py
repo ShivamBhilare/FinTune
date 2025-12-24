@@ -52,30 +52,12 @@ class Transaction(models.Model):
         verbose_name="External Transaction (Don't affect Balance)"
     )
 
-    # 4. Gamification Lock
-    verified_quest_id = models.CharField(max_length=100, blank=True, null=True, help_text="ID of the quest this transaction verified. Prevents deletion abuse.")
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.vendor_name} - {self.amount}"
 
-class QuestLog(models.Model):
-    """
-    Stores a permanent history of completed quests.
-    Replaces the simple 'completed_challenges_ids' text string.
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quest_logs')
-    quest_id = models.CharField(max_length=100) # The AI generated ID or fallback ID
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    xp_earned = models.IntegerField()
-    coins_earned = models.IntegerField()
-    completed_at = models.DateTimeField(auto_now_add=True)
-    quest_type = models.CharField(max_length=50)
 
-    def __str__(self):
-        return f"{self.user.username} - {self.title}"
 
 class FinancialGoal(models.Model):
     RISK_PROFILES = [
@@ -96,32 +78,24 @@ class FinancialGoal(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_risk_profile_display()})"
 
+
+# --- GAMIFICATION MODELS ---
+
 class GamificationProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='gamification_profile')
-    xp = models.IntegerField(default=0)
-    coins = models.IntegerField(default=0)
-    streak = models.IntegerField(default=0)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    total_xp = models.IntegerField(default=0)
+    points = models.IntegerField(default=0) # Spendable 'FinCoins'
     level = models.IntegerField(default=1)
     
-    # Store active challenge ID (simple string/integer approach for now)
-    active_challenge_id = models.CharField(max_length=50, blank=True, null=True)
+    last_quest_date = models.DateField(null=True, blank=True)
+    last_streak_update = models.DateField(null=True, blank=True)
     
-    # Store completed challenges as a JSON-like text or related model. 
-    # For simplicity, let's use a standard TextField storing comma-separated IDs 
-    # or a JSONField if we were sure about the DB support (SQLite/Postgres). 
-    # We'll use a text field for compatibility.
-    completed_challenges_ids = models.TextField(default="", blank=True) 
-
-    last_streak_update = models.DateField(blank=True, null=True)
-
-    # New Fields for AI Quests
-    daily_quests = models.TextField(default="[]", blank=True, help_text="JSON list of daily quests")
-    last_daily_quest_refresh = models.DateField(blank=True, null=True)
-    # Track when the current quest was accepted to verify actions *after* this time
-    challenge_accepted_at = models.DateTimeField(blank=True, null=True)
+    savings_generated = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.user.username} - Level {self.level}"
+        return f"{self.user.username} - Lvl {self.level}"
 
 @receiver(post_save, sender=User)
 def create_gamification_profile(sender, instance, created, **kwargs):
@@ -130,11 +104,56 @@ def create_gamification_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_gamification_profile(sender, instance, **kwargs):
-    if not hasattr(instance, 'gamification_profile'):
-         GamificationProfile.objects.create(user=instance)
-    if not hasattr(instance, 'gamification_profile'):
-         GamificationProfile.objects.create(user=instance)
-    instance.gamification_profile.save()
+    # Check if profile exists before saving (for old users)
+    if hasattr(instance, 'gamification_profile'):
+        instance.gamification_profile.save()
 
-# Import signals to ensure they are registered
-import dashboard.signals
+
+class DailyQuest(models.Model):
+    QUEST_TYPES = [
+        ('NO_SPEND_CATEGORY', 'No Spend (Category)'),
+        ('NO_SPEND_VENDOR', 'No Spend (Vendor)'),
+        ('SAVE_AMOUNT', 'Save Amount'),
+        ('STREAK_KEEPER', 'Streak Keeper'), # Legacy/Fallback
+        ('OTHER', 'Other')
+    ]
+    
+    QUEST_STATUS = [
+        ('ACTIVE', 'Active'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed')
+    ]
+
+    DIFFICULTY = [
+        ('Basic', 'Basic'),
+        ('Common', 'Common'),
+        ('Rare', 'Rare'),
+        ('Epic', 'Epic'),
+        ('Legendary', 'Legendary')
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='daily_quests')
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    quest_type = models.CharField(max_length=20, choices=QUEST_TYPES, default='OTHER')
+    status = models.CharField(max_length=20, choices=QUEST_STATUS, default='ACTIVE')
+    
+    # Challenge Config
+    duration_days = models.IntegerField(default=1) # 1 to 30
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(default=timezone.now)
+    current_progress = models.IntegerField(default=0) # Days completed
+    
+    reward_points = models.IntegerField(default=10)
+    reward_xp = models.IntegerField(default=50)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY, default='Common')
+    
+    # Stores target validation data e.g. {'category': 'Food', 'amount': 500}
+    target_variable = models.JSONField(default=dict, blank=True)
+    
+    date_generated = models.DateField(auto_now_add=True)
+    is_collected = models.BooleanField(default=False) # If user claimed reward
+
+    def __str__(self):
+        return f"{self.title} ({self.status}) - Day {self.current_progress}/{self.duration_days}"
+

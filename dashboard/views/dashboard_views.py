@@ -7,7 +7,9 @@ from datetime import timedelta
 from .healthScore_views import get_health_score_context
 
 
+
 from dashboard.utils import get_financial_persona, get_most_active_day, get_recurring_stats
+
 
 @login_required
 def home(request):
@@ -84,6 +86,8 @@ def home(request):
         'total_recurring': total_recurring
     }
     
+
+
     # Add Health Score Context
     try:
         health_context = get_health_score_context(user)
