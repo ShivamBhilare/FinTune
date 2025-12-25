@@ -25,6 +25,8 @@ urlpatterns = [
     path('goal-simulator/delete/<int:pk>/', goal_views.delete_goal, name='delete_goal'),
     path('goal-simulator/calculate/', goal_views.calculate_goal_projection, name='calculate_goal_projection'),
     path('goal-simulator/insights/', goal_views.get_financial_insights, name='get_financial_insights'),
+    path('goal-simulator/details/<int:pk>/', goal_views.get_goal_details, name='get_goal_details'),
+    path('goal-simulator/update-balance/<int:pk>/', goal_views.update_goal_balance, name='update_goal_balance'),
 
     # Gamification
     path('gamification/', gamification_views.gamification_view, name='gamification'),

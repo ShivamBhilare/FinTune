@@ -163,8 +163,8 @@ def calculate_goal_projection(request):
             
             for m in range(1, months_to_simulate + 1):
                 # Annual Step-Up
-                if m > 1 and (m - 1) % 12 == 0:
-                    current_monthly_contrib *= (1 + step_up_pct)
+                year_idx = (m - 1) // 12
+                current_monthly_contrib = monthly_contribution * ((1 + step_up_pct) ** year_idx)
                 
                 # Market Motion (Stochastic)
                 r = random.gauss(monthly_ret, monthly_vol)
@@ -198,3 +198,139 @@ def calculate_goal_projection(request):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+# --- New Views for Modal ---
+
+def _run_monte_carlo(current_savings, monthly_contribution, step_up_pct, months_to_simulate, target_amount):
+    """Reusable MC Logic"""
+    SIMULATIONS = 1000
+    annual_return, annual_volatility, inflation = 0.10, 0.12, 0.06
+    
+    monthly_ret = annual_return / 12
+    monthly_vol = annual_volatility / math.sqrt(12)
+    monthly_inf = inflation / 12
+
+    all_paths = []
+    
+    for _ in range(SIMULATIONS):
+        path = [current_savings]
+        balance = current_savings
+        current_monthly_contrib = monthly_contribution
+        
+        for m in range(1, months_to_simulate + 1):
+            # Yearly Step-Up (State-less calculation)
+            year_idx = (m - 1) // 12
+            current_monthly_contrib = monthly_contribution * ((1 + step_up_pct) ** year_idx)
+            
+            r = random.gauss(monthly_ret, monthly_vol)
+            r_real = r - monthly_inf
+            
+            balance = balance * (1 + r_real) + current_monthly_contrib
+            path.append(balance)
+        
+        all_paths.append(path)
+
+    chart_data = {'labels': list(range(months_to_simulate + 1)), 'pessimistic': [], 'median': [], 'optimistic': []}
+    
+    for m in range(months_to_simulate + 1):
+        slice_at_m = sorted([sim[m] for sim in all_paths])
+        chart_data['pessimistic'].append(round(slice_at_m[int(SIMULATIONS * 0.1)], 2))
+        chart_data['median'].append(round(slice_at_m[int(SIMULATIONS * 0.5)], 2))
+        chart_data['optimistic'].append(round(slice_at_m[int(SIMULATIONS * 0.9)], 2))
+
+    final_balances = [sim[-1] for sim in all_paths]
+    success_prob = (sum(1 for b in final_balances if b >= target_amount) / SIMULATIONS) * 100
+    
+    return chart_data, success_prob
+
+from django.shortcuts import get_object_or_404
+
+@login_required
+def get_goal_details(request, pk):
+    goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+    
+    # Calculate months remaining
+    today = timezone.now().date()
+    
+    # More robust calculation considering days
+    diff = (goal.target_date.year - today.year) * 12 + (goal.target_date.month - today.month)
+    
+    # If target date is in future but same month, assume 1 month
+    if diff <= 0 and goal.target_date > today:
+        diff = 1
+    
+    months_remaining = max(1, diff)
+    
+    # Format Duration String
+    years = months_remaining // 12
+    extra_months = months_remaining % 12
+    
+    duration_str = ""
+    if years > 0:
+        duration_str += f"{years} Year{'s' if years != 1 else ''}"
+    if extra_months > 0:
+        if duration_str:
+            duration_str += ", "
+        duration_str += f"{extra_months} Month{'s' if extra_months != 1 else ''}"
+        
+    if not duration_str:
+        duration_str = "< 1 Month"
+    
+    # Run Simulation for this specific goal
+    # Assuming standard 10% step up since it's not in DB yet
+    step_up_pct = 0.10 
+    
+    chart_data, success_prob = _run_monte_carlo(
+        float(goal.current_amount),
+        float(goal.monthly_contribution),
+        step_up_pct,
+        months_remaining,
+        float(goal.target_amount)
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'goal': {
+            'id': goal.id,
+            'name': goal.name,
+            'target_amount': goal.target_amount,
+            'current_amount': goal.current_amount,
+            'monthly_contribution': goal.monthly_contribution,
+            'target_date': goal.target_date,
+            'months_remaining': months_remaining,
+            'duration_left': duration_str
+        },
+        'chart_data': chart_data,
+        'success_probability': round(success_prob, 1)
+    })
+
+@login_required
+@csrf_exempt
+def update_goal_balance(request, pk):
+    if request.method == 'POST':
+        try:
+            goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+            data = json.loads(request.body)
+            
+            action = data.get('action') # 'add' or 'remove'
+            amount = Decimal(str(data.get('amount', 0)))
+            
+            if amount < 0:
+                return JsonResponse({'success': False, 'error': 'Amount must be positive'})
+
+            if action == 'add':
+                goal.current_amount += amount
+            elif action == 'remove':
+                if goal.current_amount < amount:
+                    return JsonResponse({'success': False, 'error': 'Insufficient funds in goal'})
+                goal.current_amount -= amount
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid action'})
+                
+            goal.save()
+            return JsonResponse({'success': True, 'new_amount': goal.current_amount})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
