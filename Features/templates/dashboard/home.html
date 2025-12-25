@@ -62,14 +62,52 @@
                     </div>
                 </div>
                 <div>
-                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Health Score</div>
+                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2"> Financial Health Score</div>
                     <div class="flex items-end gap-2">
                         <div class="text-3xl font-black text-white tracking-tight">{{ health_score|default:0 }}</div>
                         <div class="text-sm font-bold text-slate-500 mb-1">/ 100</div>
                     </div>
                     <div class="flex items-center gap-2 mt-2">
-                        <span class="px-2 py-0.5 rounded-lg {{ progress_color|default:'bg-slate-500' }}/20 {{ score_color|default:'text-slate-400' }} text-xs font-bold">{{ message|default:"No data"|truncatechars:25 }}</span>
+                        <span class="px-2 py-0.5 rounded-lg {{ progress_color|default:'bg-slate-500' }}/20 {{ score_color|default:'text-slate-400' }} text-xs font-bold">{{ message|default:"No data" }}</span>
                     </div>
+                </div>
+            </div>
+        </div>
+
+         <!-- Persona Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="user-circle" class="w-24 h-24"></i>
+            </div>
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-purple-500/20 text-purple-400">
+                        <i data-lucide="user-circle" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                     <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Financial Persona</div>
+                    <div class="text-2xl font-black text-white tracking-tight mb-1">{{ persona.persona }}</div>
+                    <div class="text-xs text-slate-500 font-medium">{{ persona.desc }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Day Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+             <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="calendar-clock" class="w-24 h-24"></i>
+            </div>
+             <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-orange-500/20 text-orange-400">
+                        <i data-lucide="calendar-clock" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Most Active Day</div>
+                    <div class="text-3xl font-black text-white tracking-tight mb-1">{{ most_active_day }}</div>
+                    <div class="text-xs text-slate-500 font-medium">Highest transaction volume</div>
                 </div>
             </div>
         </div>
@@ -115,6 +153,51 @@
                     <div class="flex items-center gap-2 mt-2">
                         <span class="px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 text-xs font-bold">+2%</span>
                         <span class="text-xs text-slate-500 font-medium">vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investments Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="pie-chart" class="w-24 h-24"></i>
+            </div>
+            
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-amber-500/20 text-amber-400">
+                        <i data-lucide="pie-chart" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Total Investments</div>
+                    <div class="text-3xl font-black text-white tracking-tight">₹{{ total_investment|floatformat:2 }}</div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold">+12%</span>
+                        <span class="text-xs text-slate-500 font-medium">vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Liabilities Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="credit-card" class="w-24 h-24"></i>
+            </div>
+            
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-rose-500/20 text-rose-400">
+                        <i data-lucide="credit-card" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Total Liabilities</div>
+                    <div class="text-3xl font-black text-white tracking-tight">₹{{ total_liabilities|floatformat:2 }}</div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 text-xs font-bold">Debt</span>
+                        <span class="text-xs text-slate-500 font-medium">Outstanding Balance</span>
                     </div>
                 </div>
             </div>
