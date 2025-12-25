@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import dashboard_views, addTransaction_views, bugetGenerator_views
+from .views import dashboard_views, addTransaction_views, bugetGenerator_views, pattern_views
 
 app_name = 'dashboard'
 
