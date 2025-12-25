@@ -4,7 +4,7 @@
 {% block title %}FinTune | Dashboard{% endblock %}
 
 {% block content %}
-<div class="space-y-10">
+<div x-data class="space-y-10">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -14,7 +14,7 @@
         
         <!-- Action Buttons -->
         <div class="flex items-center gap-3">
-            <button class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
+            <button @click="$dispatch('open-transaction-modal')" class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
                 Add Transaction
             </button>
         </div>
@@ -158,7 +158,7 @@
                         <div class="text-sm font-bold text-white">Netflix Subscription</div>
                         <div class="text-xs text-slate-400 font-medium">Oct 24, 2023</div>
                     </div>
-                    <div class="text-rose-400 font-bold">-₹S15.99</div>
+                    <div class="text-rose-400 font-bold">-₹15.99</div>
                 </div>
             </div>
             
@@ -168,4 +168,7 @@
         </div>
     </div>
 </div>
+
+<!-- Add Transaction Modal Component -->
+{% include "dashboard/add_transaction_modal.html" %}
 {% endblock %}
