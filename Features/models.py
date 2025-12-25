@@ -6,7 +6,8 @@ class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('INCOME', 'Income'),
         ('EXPENSE', 'Expense'),
-        ('INVESTMENT', 'Investment')
+        ('INVESTMENT', 'Investment'),
+        ('DEBT_PAYMENT', 'Debt Payment')
     ]
 
     CATEGORY_CHOICES = [
