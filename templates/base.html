@@ -128,7 +128,7 @@
                         <span class="text-xs font-bold uppercase tracking-widest">Pattern Detection</span>
                     </a>
 
-                    <a href="#" id="nav-goals"
+                    <a href="{% url 'dashboard:goal_tracker' %}" id="nav-goals"
                         class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:budget_generator' %}active{% endif %}">
                         <i data-lucide="pie-chart" class="w-5 h-5"></i>
                         <span class="text-xs font-bold uppercase tracking-widest">Goal Path Simulator</span>
