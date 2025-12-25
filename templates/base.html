@@ -207,7 +207,170 @@
             lucide.createIcons();
             updatePill();
         });
+        // Helper to get CSRF token (available globally for Alpine)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Chatbot Component Logic
+        function chatbot() {
+            return {
+                chatOpen: false,
+                message: '',
+                isLoading: false,
+                history: [{ role: 'ai', content: 'Hi there! I\'m your AI CFO. How can I help you save money today?' }],
+
+                async sendMessage() {
+                    if (!this.message.trim()) return;
+
+                    const userMsg = this.message;
+                    this.history.push({ role: 'user', content: userMsg });
+                    this.message = '';
+                    this.isLoading = true;
+                    this.$nextTick(() => this.scrollToBottom());
+
+                    try {
+                        // Use the URL directly or injected variable. 
+                        // Since this is in the HTML file, we can still use template tags, but let's be safe.
+                        const res = await fetch('/api/chat/', { // Hardcoded path to avoid syntax errors with quotes
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify({ message: userMsg })
+                        });
+
+                        const data = await res.json();
+
+                        if (data.error) throw new Error(data.error);
+
+                        this.history.push({ role: 'ai', content: data.response });
+                    } catch (e) {
+                        console.error("Chat Error:", e);
+                        const errorMessage = e.message || 'Sorry, I had a brain freeze. Try again?';
+                        this.history.push({ role: 'ai', content: '⚠️ Error: ' + errorMessage });
+                    } finally {
+                        this.isLoading = false;
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
+                },
+
+                scrollToBottom() {
+                    const container = document.getElementById('chat-messages');
+                    if(container) container.scrollTop = container.scrollHeight;
+                }
+            }
+        }
     </script>
+    <!-- AI CHATBOT WIDGET -->
+    <div x-data="chatbot()" 
+    class="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
+
+        <!-- Chat Window -->
+        <div x-show="chatOpen" 
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 translate-y-10 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-10 scale-95"
+             class="pointer-events-auto bg-[#040608]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl w-80 md:w-96 mb-4 overflow-hidden flex flex-col"
+             style="height: 550px; display: none;">
+            
+            <!-- Header -->
+            <div class="p-4 border-b border-white/5 flex items-center justify-between bg-white/5 backdrop-blur-md z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-white tracking-wide">AI VISOR</h3>
+                        <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span> Online
+                        </p>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex items-center gap-1">
+                    <button @click="history = []" class="p-2 text-slate-400 hover:text-white transition-colors" title="Clear Chat">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                    <button @click="chatOpen = false" class="p-2 text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
+                <template x-for="(msg, index) in history" :key="index">
+                    <div class="flex gap-3 my-3" :class="msg.role === 'user' ? 'flex-row-reverse' : ''">
+                        <!-- Avatar -->
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg border border-white/10"
+                             :class="msg.role === 'user' ? 'bg-indigo-600' : 'bg-emerald-600'">
+                            <i :data-lucide="msg.role === 'user' ? 'user' : 'bot'" class="w-4 h-4 text-white"></i>
+                        </div>
+                        
+                        <!-- Message Bubble -->
+                        <div class="flex flex-col gap-1 max-w-[75%]" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+                            <div class="rounded-2xl p-3 px-4 text-sm leading-relaxed whitespace-pre-line text-left shadow-md backdrop-blur-md border"
+                                 :class="msg.role === 'user' 
+                                    ? 'bg-indigo-600/20 border-indigo-500/30 text-white rounded-tr-sm' 
+                                    : 'bg-emerald-500/10 border-emerald-500/20 text-slate-200 rounded-tl-sm'">
+                                <span x-text="msg.content"></span>
+                            </div>
+                            <span class="text-[10px] text-slate-600 font-medium px-1" x-text="msg.role === 'user' ? 'You' : 'FinTune AI'"></span>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Loading Indicator -->
+                <div x-show="isLoading" class="flex flex-col gap-1 items-start">
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-500 px-1">Typing...</span>
+                    <div class="bg-white/5 rounded-2xl rounded-tl-sm p-4 border border-white/10 flex gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce shadow"></span>
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce delay-100 shadow"></span>
+                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce delay-200 shadow"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
+                <form @submit.prevent="sendMessage" class="relative group">
+                    <input type="text" x-model="message" 
+                           placeholder="Ask Financial AI..." 
+                           class="w-full bg-white/5 text-white text-sm rounded-xl pl-4 pr-12 py-3.5 border border-white/10 focus:border-indigo-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-slate-600 font-medium shadow-inner"
+                           :disabled="isLoading">
+                    <button type="submit" 
+                            class="absolute right-2 top-2 p-1.5 rounded-lg text-indigo-400 hover:text-white hover:bg-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- FAB Button -->
+        <button @click="chatOpen = !chatOpen" 
+                class="pointer-events-auto h-16 w-16 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 hover:scale-105 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)] flex items-center justify-center transition-all active:scale-95 group z-50 border border-white/10">
+            <div class="absolute inset-0 rounded-full bg-white/20 animate-pulse" x-show="isLoading"></div>
+            <i data-lucide="bot" class="w-8 h-8 group-hover:rotate-12 transition-transform" x-show="!chatOpen"></i>
+            <i data-lucide="chevron-down" class="w-8 h-8" x-show="chatOpen" style="display: none;"></i>
+        </button>
+    </div>
+
     {% block extra_script %}{% endblock %}
 </body>
 

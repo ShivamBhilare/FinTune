@@ -1,6 +1,5 @@
 from django.urls import path
-from .views import dashboard_views, addTransaction_views, bugetGenerator_views, pattern_views, goal_views
-from .views import dashboard_views, addTransaction_views, bugetGenerator_views, pattern_views, gamification_views
+from .views import dashboard_views, addTransaction_views, bugetGenerator_views, pattern_views, goal_views, gamification_views, chatbot_views
 
 app_name = 'dashboard'
 
@@ -29,4 +28,7 @@ urlpatterns = [
     # Gamification
     path('gamification/', gamification_views.gamification_view, name='gamification'),
     path('gamification/generate/', gamification_views.generate_challenge_view, name='generate_challenge'),
+
+    # Chatbot
+    path('api/chat/', chatbot_views.chat_api, name='chat_api'),
 ]
