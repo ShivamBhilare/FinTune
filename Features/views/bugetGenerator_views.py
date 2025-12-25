@@ -47,7 +47,7 @@ def calculate_monthly_totals(user):
         'Housing', 'Utilities', 'Healthcare', 'Transportation', 
         'Groceries', 'Tax', 'Food' 
     ]
-    savings_categories = ['SIP', 'Stocks', 'Savings']
+    savings_categories = ['SIP', 'Stocks', 'Savings','Investment','Mutual Funds']
     
     # Calculate Buckets
     needs_total = expenses.filter(category__in=needs_categories).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
