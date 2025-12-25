@@ -110,8 +110,8 @@
                         <span class="text-xs font-bold uppercase tracking-widest">Dashboard</span>
                     </a>
 
-                    <a href="#" id="nav-history"
-                        class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:transaction_history' %}active{% endif %}">
+                    <a href="{% url 'dashboard:history' %}" id="nav-history"
+                        class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:history' %}active{% endif %}">
                         <i data-lucide="history" class="w-5 h-5"></i>
                         <span class="text-xs font-bold uppercase tracking-widest">History</span>
                     </a>
