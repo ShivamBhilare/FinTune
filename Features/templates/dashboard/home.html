@@ -4,7 +4,7 @@
 {% block title %}FinTune | Dashboard{% endblock %}
 
 {% block content %}
-<div class="space-y-10">
+<div x-data class="space-y-10">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -14,7 +14,7 @@
         
         <!-- Action Buttons -->
         <div class="flex items-center gap-3">
-            <button class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
+            <button @click="$dispatch('open-transaction-modal')" class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
                 Add Transaction
             </button>
         </div>
@@ -59,7 +59,7 @@
                 </div>
                 <div>
                     <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Total Income</div>
-                    <div class="text-3xl font-black text-white tracking-tight">$8,250.00</div>
+                    <div class="text-3xl font-black text-white tracking-tight">₹8,250.00</div>
                     <div class="flex items-center gap-2 mt-2">
                         <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold">+5%</span>
                         <span class="text-xs text-slate-500 font-medium">vs last month</span>
@@ -82,7 +82,7 @@
                 </div>
                 <div>
                     <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Total Spent</div>
-                    <div class="text-3xl font-black text-white tracking-tight">$3,400.00</div>
+                    <div class="text-3xl font-black text-white tracking-tight">₹3,400.00</div>
                     <div class="flex items-center gap-2 mt-2">
                         <span class="px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-400 text-xs font-bold">+2%</span>
                         <span class="text-xs text-slate-500 font-medium">vs last month</span>
@@ -159,7 +159,7 @@
                         <div class="text-sm font-bold text-white">Grocery Store</div>
                         <div class="text-xs text-slate-400 font-medium">Today, 12:42 PM</div>
                     </div>
-                    <div class="text-rose-400 font-bold">-$124.50</div>
+                    <div class="text-rose-400 font-bold">-₹124.50</div>
                 </div>
 
                 <!-- Activity Item -->
@@ -171,7 +171,7 @@
                         <div class="text-sm font-bold text-white">Salary Deposit</div>
                         <div class="text-xs text-slate-400 font-medium">Yesterday, 9:00 AM</div>
                     </div>
-                    <div class="text-emerald-400 font-bold">+$4,250.00</div>
+                    <div class="text-emerald-400 font-bold">+₹4,250.00</div>
                 </div>
                 
                 <!-- Activity Item -->
@@ -183,7 +183,7 @@
                         <div class="text-sm font-bold text-white">Netflix Subscription</div>
                         <div class="text-xs text-slate-400 font-medium">Oct 24, 2023</div>
                     </div>
-                    <div class="text-rose-400 font-bold">-$15.99</div>
+                    <div class="text-rose-400 font-bold">-₹15.99</div>
                 </div>
             </div>
             
@@ -193,4 +193,7 @@
         </div>
     </div>
 </div>
+
+<!-- Add Transaction Modal Component -->
+{% include "dashboard/add_transaction_modal.html" %}
 {% endblock %}
