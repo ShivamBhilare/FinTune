@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FinTune | Profile {% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Profile Specific Styles */
+    .glass-card {
+        background: rgba(15, 23, 42, 0.3);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 1.5rem;
+    }
+
+    .input-field {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .input-field:focus {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.05);
+        outline: none;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    .input-field.locked {
+        color: #64748b;
+        cursor: default;
+        border-color: transparent;
+        background: rgba(255, 255, 255, 0.01);
+        pointer-events: none;
+    }
+
+    .input-field.perm-locked {
+        color: #475569;
+        cursor: not-allowed;
+        border-color: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .save-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .edit-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .edit-btn:hover { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="{ isEditing: {{ success|yesno:'false,false' }} }">
+    <div class="max-w-4xl mx-auto space-y-8 pb-20">
+        
+        <!-- Header with Edit Action -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="space-y-2">
+                <h1 class="text-3xl font-extrabold tracking-tight text-white">Your Profile</h1>
+                <p class="text-slate-400">Configure your personal and financial parameters.</p>
+            </div>
+            
+            {% if success %}
+            <div class="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm font-bold flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Changes Saved Successfully
+            </div>
+            {% endif %}
+
+            <div x-show="!isEditing" x-transition.opacity>
+                <button @click="isEditing = true" class="edit-btn px-6 py-3 rounded-xl text-sm font-bold text-white transition-all flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-emerald-500"></i>
+                    Edit Profile
+                </button>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <!-- Identity & Account Card -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                    <i data-lucide="shield-check" class="text-emerald-500 w-6 h-6"></i>
+                    <h2 class="text-xl font-bold text-white">Identity & Account</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Fixed Fields (Permanently Locked) -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                            Username <i data-lucide="lock" class="w-3 h-3"></i>
+                        </label>
+                        <input type="text" value="{{ user.username }}" readonly class="input-field perm-locked w-full px-4 py-3 rounded-xl text-sm">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                            Email Address <i data-lucide="lock" class="w-3 h-3"></i>
+                        </label>
+                        <input type="email" value="{{ user.email }}" readonly class="input-field perm-locked w-full px-4 py-3 rounded-xl text-sm">
+                    </div>
+
+                    <!-- Conditional Editable Fields -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">First Name</label>
+                        <div x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            {{ form.first_name }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Last Name</label>
+                        <div x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 md:col-span-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Phone Number</label>
+                        <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                            {{ form.phone_number }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Baseline Card -->
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-8 border-b border-white/5 pb-4">
+                    <i data-lucide="activity" class="text-emerald-500 w-6 h-6"></i>
+                    <h2 class="text-xl font-bold text-white">Financial Baseline</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Monthly Income</label>
+                        <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            {{ form.monthly_income }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Current Balance</label>
+                        <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            {{ form.cash_balance }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-rose-500' : 'text-slate-500'">Total Liabilities</label>
+                        <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            {{ form.total_liabilities }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons (Visible only in Edit Mode) -->
+            <div x-show="isEditing" x-transition.opacity class="flex items-center justify-end gap-4">
+                <button type="button" @click="isEditing = false" class="px-6 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-colors">
+                    Discard Changes
+                </button>
+                <button type="submit" class="save-btn px-8 py-3 rounded-xl text-sm font-bold text-black transition-all flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Save Parameters
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
