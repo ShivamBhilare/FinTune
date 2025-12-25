@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FinTune | Pattern Detection{% endblock %}
+
+{% block content %}
+<div class="space-y-10" x-data="{ showExplainer: false }">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white mb-2">Financial Patterns</h1>
+            <p class="text-slate-400 font-medium">AI-driven analysis of your spending behavior.</p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+             <button @click="showExplainer = !showExplainer" class="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold text-xs uppercase tracking-widest border border-white/5 transition-all shadow-lg hover:shadow-indigo-500/10">
+                <i data-lucide="sparkles" class="w-4 h-4 inline-block mr-2 transform -translate-y-0.5 text-indigo-400"></i>
+                How AI Works
+            </button>
+        </div>
+    </div>
+
+    <!-- Smart Insight Banner (Styled like Home Activity) -->
+    <div class="p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center gap-5 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+        <div class="p-3 rounded-2xl bg-indigo-500/20 text-indigo-400 shrink-0 relative z-10">
+            <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+        </div>
+        <div class="relative z-10">
+             <h3 class="text-white font-bold mb-1 flex items-center gap-2">
+                AI Insight detected
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+             </h3>
+             <p class="text-slate-400 text-sm">
+                You tend to spend most heavily on <span class="text-indigo-300 font-bold">{{ persona.persona }}</span> related items on <span class="text-indigo-300 font-bold">{{ most_active_day }}s</span>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Explainer Modal (Inline) -->
+    <div x-show="showExplainer" x-transition class="p-6 rounded-3xl bg-black/40 border border-white/10 text-sm text-slate-400 space-y-2">
+        <p><strong class="text-emerald-400">Forecasting:</strong> Uses ARIMA (AutoRegressive Integrated Moving Average) to predict next 30 days.</p>
+        <p><strong class="text-purple-400">Persona:</strong> Categorized based on your dominant spending sector.</p>
+        <p><strong class="text-blue-400">Recurring:</strong> Detected via Fuzzy String Matching on vendor names.</p>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Persona Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="user-circle" class="w-24 h-24"></i>
+            </div>
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-purple-500/20 text-purple-400">
+                        <i data-lucide="user-circle" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                     <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Financial Persona</div>
+                    <div class="text-2xl font-black text-white tracking-tight mb-1">{{ persona.persona }}</div>
+                    <div class="text-xs text-slate-500 font-medium">{{ persona.desc }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Day Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+             <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="calendar-clock" class="w-24 h-24"></i>
+            </div>
+             <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-orange-500/20 text-orange-400">
+                        <i data-lucide="calendar-clock" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Most Active Day</div>
+                    <div class="text-3xl font-black text-white tracking-tight mb-1">{{ most_active_day }}</div>
+                    <div class="text-xs text-slate-500 font-medium">Highest transaction volume</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recurring Total Card -->
+        <div class="group relative p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl overflow-hidden hover:bg-white/10 transition-all duration-300">
+             <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="refresh-ccw" class="w-24 h-24"></i>
+            </div>
+             <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400">
+                        <i data-lucide="refresh-ccw" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div>
+                     <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Monthly Fixed</div>
+                    <div class="text-3xl font-black text-white tracking-tight mb-1">₹{{ recurring_total }}</div>
+                    <div class="text-xs text-slate-500 font-medium">Estimated recurring costs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Category Distribution (Reference Layout) -->
+        <div class="lg:col-span-1 p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl flex flex-col relative overflow-hidden">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-5 h-5 text-yellow-500"></i>
+                Category Breakdown
+            </h3>
+            
+            <div class="flex flex-col h-full">
+                <!-- Chart Area -->
+                <div class="relative aspect-square w-full max-h-64 mx-auto mb-4">
+                    <canvas id="categoryChart"></canvas>
+                    <!-- Center Overlay (Optional, keeping for style) -->
+                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                        <span class="text-3xl font-black text-white drop-shadow-lg" id="centerLabel"></span>
+                    </div>
+                </div>
+
+                <!-- Custom Legend (Scrollable if many items) -->
+                <div id="customLegend" class="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                    <!-- JS will populate this -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Forecast -->
+        <div class="lg:col-span-2 p-8 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-xl relative overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        30-Day Expense Forecast
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">AI-Powered trend analysis & prediction</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span> <span class="text-slate-300">History</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span> <span class="text-slate-300">Prediction</span>
+                    </div>
+                </div>
+            </div>
+            <div class="h-80 w-full relative">
+                <!-- Forecast Chart -->
+                <canvas id="forecastChart"></canvas>
+            </div>
+            
+            {% if total_transactions < 10 %}
+            <!-- Low Data Warning -->
+            <div class="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-500 shrink-0"></i>
+                <div class="text-sm text-yellow-200/80">
+                    <strong class="text-yellow-500">Note:</strong> 
+                    Limited data available. The forecast is currently a projection based on averages.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recurring Transactions Grid -->
+    <div>
+        <h3 class="text-lg font-bold text-white mb-6">Detected Recurring</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for item in recurring_stats %}
+            <div class="group relative p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer hover:-translate-y-1">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-sm">
+                        {{ item.vendor|slice:":2"|upper }}
+                    </div>
+                    <span class="text-xs font-bold text-indigo-300 px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/10">x{{ item.count }}</span>
+                </div>
+                <h4 class="text-white font-bold truncate">{{ item.vendor }}</h4>
+                <div class="text-slate-400 text-xs mt-1">Avg: <span class="text-white font-medium">₹{{ item.amount }}</span></div>
+            </div>
+            {% empty %}
+            <div class="col-span-4 p-8 rounded-2xl bg-white/5 border border-white/5 border-dashed flex flex-col items-center justify-center text-center text-slate-500">
+                <i data-lucide="ghost" class="w-8 h-8 mb-2 opacity-50"></i>
+                <p>No recurring transactions detected yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 1. Creative Doughnut Chart
+    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+    const categoryData = {{ category_data|safe }};
+    const labels = Object.keys(categoryData);
+    const dataValues = Object.values(categoryData);
+    
+    // Vibrant Colors matching reference
+    const colors = [
+        '#FACC15', // Yellow
+        '#3B82F6', // Blue
+        '#22C55E', // Green
+        '#EF4444', // Red
+        '#A855F7', // Purple
+        '#F97316', // Orange
+        '#06B6D4', // Cyan
+        '#EC4899', // Pink
+        '#6366F1'  // Indigo
+    ];
+
+    // Set Center Label
+    if (labels.length > 0) {
+        const total = dataValues.reduce((a, b) => a + b, 0);
+        const percentage = Math.round((dataValues[0] / total) * 100);
+        document.getElementById('centerLabel').innerText = percentage + '%';
+        
+        // Populate Legend
+        const legendContainer = document.getElementById('customLegend');
+        labels.forEach((label, index) => {
+            const color = colors[index % colors.length];
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between text-xs';
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-sm shrink-0" style="background-color: ${color}"></span>
+                    <span class="text-slate-300 font-medium">${label}</span>
+                </div>
+                <span class="text-slate-500 font-bold hidden sm:block">₹${dataValues[index]}</span>
+            `;
+            legendContainer.appendChild(div);
+        });
+    }
+
+    new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: dataValues,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 10,
+                borderRadius: 5, 
+                spacing: 2
+            }]
+        },
+        options: {
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            layout: { padding: 10 }
+        }
+    });
+
+    // 2. Line Chart for Forecast
+    const ctxFore = document.getElementById('forecastChart').getContext('2d');
+    const trendData = {{ trend_and_forecast|safe }};
+    
+    // Gradient for Forecast Area
+    const gradient = ctxFore.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctxFore, {
+        type: 'line',
+        data: {
+            labels: trendData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'History',
+                    data: trendData.map(d => d.is_forecast ? null : d.amount),
+                    borderColor: '#10b981',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    spanGaps: true
+                },
+                {
+                    label: 'Prediction',
+                    data: trendData.map(d => d.is_forecast ? d.amount : null),
+                    borderColor: '#3b82f6',
+                    borderWidth: 3,
+                    borderDash: [6, 6],
+                    backgroundColor: gradient,
+                    fill: true,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    spanGaps: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { 
+                        color: '#64748b',
+                        font: { size: 10 },
+                        callback: function(value) { return '₹' + value; }
+                    },
+                    border: { display: false }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
