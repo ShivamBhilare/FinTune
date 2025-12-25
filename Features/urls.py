@@ -6,6 +6,7 @@ app_name = 'dashboard'
 urlpatterns = [
     path('', dashboard_views.home_redirect_view, name='home'),
     path('profile/', dashboard_views.profile_view, name='profile'),
+    path('history/', dashboard_views.transaction_history, name='history'),
     path('dashboard/', dashboard_views.dashboard_view, name='dashboard'),
     
     # Add Transaction Endpoints

@@ -7,50 +7,25 @@ def profile_view(request):
     """
     Profile management view.
     Allows users to view and update their profile information.
-    Syncs 'Current Balance' display with Dashboard 'Total Balance'.
     """
-    user = request.user
-    
-    def get_net_delta(monthly_income):
-        # Helper to get net flow excluding initial balance
-        def get_sum(tx_type):
-            return Transaction.objects.filter(user=user, transaction_type=tx_type, is_external=False).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        income = get_sum('INCOME') + (monthly_income or 0)
-        expense = get_sum('EXPENSE')
-        investment = get_sum('INVESTMENT')
-        return income - (expense + investment)
-
     if request.method == 'POST':
         form = ProfileForm(request.POST, instance=request.user.profile)
         if form.is_valid():
-            # Get the total balance the user WANTS to see
-            submitted_balance = form.cleaned_data.get('cash_balance', 0) or 0
-            submitted_income = form.cleaned_data.get('monthly_income', 0) or 0
-            
-            # Calculate back the necessary initial balance
-            net_delta = get_net_delta(submitted_income)
-            new_initial_balance = submitted_balance - net_delta
-            
-            profile = form.save(commit=False)
-            profile.cash_balance = new_initial_balance
-            profile.save()
-            profile.user.save() # Save user fields (first/last name)
-            
-            # Re-init form with the calculated total for display
-            form = ProfileForm(instance=request.user.profile)
-            form.fields['cash_balance'].initial = submitted_balance
-            
+            form.save()
             return render(request, 'dashboard/profile.html', {'form': form, 'success': True})
     else:
         form = ProfileForm(instance=request.user.profile)
-        # Pre-populate form with the Calculated Total Balance
-        current_profile_income = user.profile.monthly_income
-        net_delta = get_net_delta(current_profile_income)
-        calculated_balance = (user.profile.cash_balance or 0) + net_delta
-        form.fields['cash_balance'].initial = calculated_balance
     
     return render(request, 'dashboard/profile.html', {'form': form})
+
+@login_required
+def transaction_history(request):
+    """
+    Transactions history view.
+    Displays all user transactions ordered by date.
+    """
+    transactions = Transaction.objects.filter(user=request.user).order_by('-date')
+    return render(request, 'dashboard/transaction_history.html', {'transactions': transactions})
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -85,7 +60,7 @@ def dashboard_view(request):
         profile_income = 0
             
     # Current totals
-    income = get_transaction_sum(Transaction.objects.filter(user=user), 'INCOME') + profile_income
+    income = get_transaction_sum(Transaction.objects.filter(user=user), 'INCOME') 
     expense = get_transaction_sum(Transaction.objects.filter(user=user), 'EXPENSE')
     investment = get_transaction_sum(Transaction.objects.filter(user=user), 'INVESTMENT')
     
