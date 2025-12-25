@@ -24,17 +24,8 @@ def add_manual_transaction(request):
         amount = transaction.amount
         
         if not transaction.is_external:
-            if transaction.transaction_type == 'EXPENSE':
-                if profile.cash_balance < amount:
-                    return JsonResponse({'status': 'error', 'message': 'Insufficient Funds!'})
-                profile.cash_balance -= amount
-            elif transaction.transaction_type == 'INCOME':
-                profile.cash_balance += amount
-            elif transaction.transaction_type == 'INVESTMENT':
-                if profile.cash_balance < amount:
-                    return JsonResponse({'status': 'error', 'message': 'Insufficient Funds!'})
-                profile.cash_balance -= amount
-            profile.save()
+             pass # Logic removed: Cash balance is now static initial balance
+
             
         transaction.save()
         return JsonResponse({'status': 'success', 'message': 'Transaction added successfully!'})
@@ -95,9 +86,8 @@ def save_confirmed(request):
                 total_income += amount
                 
         # Check balance if not external
-        if not is_external_global:
-             if profile.cash_balance + Decimal(str(total_income)) < Decimal(str(total_expense)):
-                 return JsonResponse({'status': 'error', 'message': 'Insufficient Funds for total amount!'})
+        # Balance Check Removed: cash_balance is static
+
 
         # Second pass: Save transactions
         transactions_to_create = []
@@ -117,9 +107,8 @@ def save_confirmed(request):
         Transaction.objects.bulk_create(transactions_to_create)
         
         # Update Balance
-        if not is_external_global:
-            profile.cash_balance += (Decimal(str(total_income)) - Decimal(str(total_expense)))
-            profile.save()
+        # Update Balance Removed: cash_balance is static
+
             
         return JsonResponse({'status': 'success', 'message': f'{len(transactions_to_create)} transactions saved!'})
 

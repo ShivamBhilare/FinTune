@@ -24,7 +24,7 @@ def transaction_history(request):
     Transactions history view.
     Displays all user transactions ordered by date.
     """
-    transactions = Transaction.objects.filter(user=request.user).order_by('-date')
+    transactions = Transaction.objects.filter(user=request.user).order_by('-date', '-created_at')
     return render(request, 'dashboard/transaction_history.html', {'transactions': transactions})
 
 from django.db.models import Sum
@@ -96,7 +96,7 @@ def dashboard_view(request):
         elif balance < 0:
             percentage_change = -100
 
-    recent_transactions = Transaction.objects.filter(user=user).order_by('-date')[:5]
+    recent_transactions = Transaction.objects.filter(user=user).order_by('-date', '-created_at')[:5]
     
     # Get Health Score Context
     context = get_health_score_context(user)
