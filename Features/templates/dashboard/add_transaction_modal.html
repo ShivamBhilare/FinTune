@@ -360,7 +360,7 @@ document.addEventListener('alpine:init', () => {
             }
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-            fetch('{% url "add_manual" %}', {
+            fetch('{% url "dashboard:add_manual" %}', {
                 method: 'POST',
                 body: formData
             })
@@ -420,7 +420,7 @@ document.addEventListener('alpine:init', () => {
 
         processVoice() {
             this.loading = true;
-            fetch('{% url "process_voice" %}', {
+            fetch('{% url "dashboard:process_voice" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -454,7 +454,7 @@ document.addEventListener('alpine:init', () => {
             formData.append('image', this.imageFile);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-            fetch('{% url "process_image" %}', {
+            fetch('{% url "dashboard:process_image" %}', {
                 method: 'POST',
                 body: formData
             })
@@ -525,7 +525,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         _processStagedSubmit(isExternal) {
-            fetch('{% url "save_confirmed" %}', {
+            fetch('{% url "dashboard:save_confirmed" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ def questionnaire_view(request):
         profile = UserProfile.objects.create(user=request.user)
 
     if profile.is_onboarded:
-        return redirect('dashboard')
+        return redirect('dashboard:dashboard')
 
     if request.method == 'POST':
         form = QuestionnaireForm(request.POST, instance=profile)
@@ -21,7 +21,7 @@ def questionnaire_view(request):
             profile.is_onboarded = True
             profile.save()
             messages.success(request, "Profile updated successfully! Welcome to your dashboard.")
-            return redirect('dashboard')
+            return redirect('dashboard:dashboard')
     else:
         initial_data = {
             'first_name': request.user.first_name,
