@@ -1,0 +1,99 @@
+{% extends "layouts/auth_base.html" %}
+
+{% block head_title %}Onboarding Questionnaire{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-slate-900 p-10 rounded-xl shadow-2xl border border-slate-800">
+        <div class="text-center">
+            <h2 class="mt-6 text-3xl font-extrabold text-white">Let's get you set up</h2>
+            <p class="mt-2 text-sm text-slate-400">
+                Please provide some basic details to personalize your experience.
+            </p>
+        </div>
+        <form class="mt-8 space-y-6" method="POST">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Hol' up!</strong>
+                    <span class="block sm:inline">Please fix the errors below.</span>
+                    <ul class="mt-2 list-disc list-inside text-sm">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-slate-300">First Name</label>
+                    <div class="mt-1">
+                        {{ form.first_name }}
+                    </div>
+                </div>
+                <div>
+                    <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-slate-300">Last Name</label>
+                    <div class="mt-1">
+                        {{ form.last_name }}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.phone_number.id_for_label }}" class="block text-sm font-medium text-slate-300">Phone Number</label>
+                <div class="mt-1">
+                    {{ form.phone_number }}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.monthly_income.id_for_label }}" class="block text-sm font-medium text-slate-300">Monthly Income</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-slate-400 sm:text-sm">₹</span>
+                    </div>
+                    {{ form.monthly_income }}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.cash_balance.id_for_label }}" class="block text-sm font-medium text-slate-300">Current Balance</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-slate-400 sm:text-sm">₹</span>
+                    </div>
+                    {{ form.cash_balance }}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.total_liabilities.id_for_label }}" class="block text-sm font-medium text-slate-300">Total Liabilities</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-slate-400 sm:text-sm">₹</span>
+                    </div>
+                    {{ form.total_liabilities }}
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <!-- Heroicon name: solid/check -->
+                        <svg class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Complete Setup
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

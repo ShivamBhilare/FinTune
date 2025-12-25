@@ -71,6 +71,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Add the account middleware:
     "allauth.account.middleware.AccountMiddleware",
+    # Onboarding Middleware
+    "auth_user.middleware.OnboardingMiddleware",
 ]
 
 ROOT_URLCONF = 'FinTune.urls'
@@ -170,7 +172,8 @@ LOGIN_REDIRECT_URL = 'questionnaire'
 LOGOUT_REDIRECT_URL = '/'
 
 # Email Backend (for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'auth_user.backends.CleanConsoleEmailBackend'
 
 # Google Gemini API Key
 # Google Gemini API Key
