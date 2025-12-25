@@ -1,0 +1,18 @@
+{% extends "layouts/auth_base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Verify Your E-mail Address" %}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-2">{% trans "Verify Your E-mail Address" %}</h1>
+    <p class="text-slate-400 text-sm">{% trans "We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process." %}</p>
+    <p class="text-slate-500 text-xs mt-4">{% trans "Please contact us if you do not receive it within a few minutes." %}</p>
+</div>
+
+<div class="mt-8 text-center">
+    <a href="{% url 'account_login' %}" class="btn-submit inline-block w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all duration-200">
+        {% trans "Back to Log In" %}
+    </a>
+</div>
+{% endblock %}

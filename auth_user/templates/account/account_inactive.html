@@ -1,0 +1,17 @@
+{% extends "layouts/auth_base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Account Inactive" %}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-2 text-red-500">{% trans "Account Inactive" %}</h1>
+    <p class="text-slate-400 text-sm">{% trans "This account is inactive." %}</p>
+</div>
+
+<div class="mt-8 text-center">
+    <a href="{% url 'account_login' %}" class="btn-submit inline-block w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-indigo-900/20">
+        {% trans "Back to Log In" %}
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "layouts/auth_base.html" %}
+{% load i18n account socialaccount %}
+
+{% block head_title %}{% trans "Sign In" %}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-2">{% trans "Welcome back" %}</h1>
+    <p class="text-slate-400 text-sm">{% trans "Please enter your details." %}</p>
+</div>
+
+<form class="space-y-4" method="POST" action="{% url 'account_login' %}" onsubmit="setLoading(this, true)">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            {% for error in field.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="space-y-4">
+        <div>
+            <label for="id_login" class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">{% trans "Email" %}</label>
+            {{ form.login }}
+        </div>
+        <div>
+            <label for="id_password" class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">{% trans "Password" %}</label>
+            {{ form.password }}
+        </div>
+    </div>
+
+    {% if redirect_field_value %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+    {% endif %}
+
+    <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center text-slate-400 hover:text-white cursor-pointer transition-colors">
+            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-0 focus:ring-offset-0 mr-2">
+            {% trans "Remember me" %}
+        </label>
+        <a class="text-indigo-400 hover:text-indigo-300 transition-colors" href="{% url 'account_reset_password' %}">
+            {% trans "Forgot password?" %}
+        </a>
+    </div>
+
+    <button type="submit" class="btn-submit w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-indigo-900/20 flex items-center justify-center">
+        <span>{% trans "Sign In" %}</span>
+        <div class="spinner"></div>
+    </button>
+</form>
+
+<div class="mt-8 pt-6 border-t border-slate-700/50 text-center">
+    <p class="text-slate-400 text-sm">
+        {% trans "Don't have an account?" %} 
+        <a href="{{ signup_url }}" class="text-indigo-400 hover:text-indigo-300 font-medium transition-colors ml-1">
+            {% trans "Sign up" %}
+        </a>
+    </p>
+</div>
+{% endblock %}

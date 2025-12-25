@@ -1,0 +1,29 @@
+{% extends "layouts/auth_base.html" %}
+{% load i18n account socialaccount %}
+
+{% block head_title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-2xl font-bold mb-2">{% trans "Sign Out" %}</h1>
+    <p class="text-slate-400 text-sm">{% trans "Are you sure you want to sign out?" %}</p>
+</div>
+
+<form method="post" action="{% url 'account_logout' %}" onsubmit="setLoading(this, true)">
+  {% csrf_token %}
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+  {% endif %}
+  
+  <button type="submit" class="btn-submit w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-indigo-900/20 flex items-center justify-center">
+    <span>{% trans "Sign Out" %}</span>
+    <div class="spinner"></div>
+  </button>
+  
+  <div class="mt-4 text-center">
+      <a href="javascript:history.back()" class="text-slate-400 hover:text-white text-sm transition-colors">
+        {% trans "Cancel" %}
+      </a>
+  </div>
+</form>
+{% endblock %}
