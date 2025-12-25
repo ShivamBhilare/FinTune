@@ -31,6 +31,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
 from ..models import Transaction
+from ..ml_utils import get_financial_persona, get_most_active_day
 from .health_score import get_health_score_context
 
 @login_required
@@ -76,6 +77,13 @@ def dashboard_view(request):
         date__year=now.year
     ).aggregate(Sum('amount'))['amount__sum'] or 0
     
+    current_month_investment = Transaction.objects.filter(
+        user=user, 
+        transaction_type='INVESTMENT', 
+        date__month=now.month, 
+        date__year=now.year
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
     # Previous Month Stats (30 days ago reference point for trend)
     last_month = now - timedelta(days=30)
     base_qs_last = Transaction.objects.filter(user=user, date__lt=last_month)
@@ -105,10 +113,17 @@ def dashboard_view(request):
     context.update({
         'total_balance': balance,
         'total_income': income,
-        'total_expense': current_month_expense, 
+        'total_expense': current_month_expense,
+        'total_investment': current_month_investment, 
         'recent_transactions': recent_transactions,
         'percentage_change': round(percentage_change, 1),
-        'balance_is_positive': percentage_change >= 0
+        'balance_is_positive': percentage_change >= 0,
+        # Add Persona Data
+        'persona': get_financial_persona(user),
+        # Add Most Active Day
+        'most_active_day': get_most_active_day(user),
+        # Add Total Liabilities
+        'total_liabilities': user.profile.total_liabilities or 0
     })
 
     return render(request, 'dashboard/home.html', context)
