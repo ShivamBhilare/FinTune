@@ -134,9 +134,9 @@
                         <span class="text-xs font-bold uppercase tracking-widest">Goal Path Simulator</span>
                     </a>
 
-                    <a href="#" id="nav-quest"
-                        class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:budget_generator' %}active{% endif %}">
-                        <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                    <a href="{% url 'dashboard:gamification' %}" id="nav-quest"
+                        class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:gamification' %}active{% endif %}">
+                        <i data-lucide="target" class="w-5 h-5"></i>
                         <span class="text-xs font-bold uppercase tracking-widest">Side Quest</span>
                     </a>
                 </nav>
