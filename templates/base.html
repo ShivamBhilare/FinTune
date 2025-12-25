@@ -116,7 +116,7 @@
                         <span class="text-xs font-bold uppercase tracking-widest">History</span>
                     </a>
 
-                    <a href="#" id="nav-budget"
+                    <a href="{% url 'dashboard:budget_generator' %}" id="nav-budget"
                         class="nav-item flex items-center gap-4 px-6 py-4 rounded-2xl {% if request.resolver_match.view_name == 'dashboard:budget_generator' %}active{% endif %}">
                         <i data-lucide="pie-chart" class="w-5 h-5"></i>
                         <span class="text-xs font-bold uppercase tracking-widest">Budget Generator</span>

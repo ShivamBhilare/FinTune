@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import dashboard_views, addTransaction_views, pattern_views
+from .views import dashboard_views, addTransaction_views, bugetGenerator_views
 
 app_name = 'dashboard'
 
@@ -13,7 +13,8 @@ urlpatterns = [
     path('process-voice/', addTransaction_views.process_voice, name='process_voice'),
     path('process-image/', addTransaction_views.process_image, name='process_image'),
     path('save-confirmed/', addTransaction_views.save_confirmed, name='save_confirmed'),
-    
+    path('budget-generator/', bugetGenerator_views.budget_generator_view, name='budget_generator'),
+
     # Pattern Detection & ML Insights
     path('pattern-detection/', pattern_views.pattern_detection_view, name='pattern_detection'),
 ]
