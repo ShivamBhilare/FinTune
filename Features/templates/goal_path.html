@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Goal Path Simulator | FinTune{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+    /* Premium UI Components */
+    .frosted-panel {
+        background: rgba(10, 12, 16, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .shimmer-text {
+        background: linear-gradient(90deg, #fff 0%, #6366f1 50%, #fff 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+        to { background-position: 200% center; }
+    }
+
+    .dark-calendar::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+
+    /* Custom Scrollbar for the list */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700 font-['Plus_Jakarta_Sans']"
+     x-data="goalSimulator()">
+    
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+            <h1 class="text-4xl font-black tracking-tighter text-white uppercase shimmer-text mb-2">Goal Path Simulator</h1>
+            <p class="text-slate-500 font-medium text-xs uppercase tracking-[0.2em]">Monte Carlo Projection • Inflation Adjusted</p>
+        </div>
+        
+        <div class="frosted-panel p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+            <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Avg Monthly Surplus</p>
+                <p class="text-lg font-black text-white">₹{{ insights.avg_surplus|default:"0"|floatformat:0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 space-y-6">
+            <div class="frosted-panel p-6 rounded-3xl border border-white/10 bg-[#0a0c10]">
+                <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4 text-indigo-500"></i> Configuration
+                </h3>
+
+                <form @submit.prevent="runSimulation" class="space-y-5">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Goal Name</label>
+                        <input type="text" x-model="form.name" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors" placeholder="e.g. Dream Home">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target Amount (₹)</label>
+                        <input type="number" x-model="form.target_amount" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Corpus (₹)</label>
+                        <input type="number" x-model="form.current_savings" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Monthly SIP (₹)</label>
+                        <div class="relative">
+                            <input type="number" x-model="form.monthly_contribution" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors">
+                            <button type="button" @click="form.monthly_contribution = {{ insights.avg_surplus|default:0 }}" class="absolute right-3 top-3 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 uppercase tracking-wider">Use Surplus</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Step-Up (%)</label>
+                            <input type="number" x-model="form.step_up_percentage" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target Date</label>
+                            <input type="date" x-model="form.target_date" required class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-bold focus:border-indigo-500 focus:outline-none transition-colors dark-calendar">
+                        </div>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-indigo-500/25 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                        :disabled="loading">
+                        <i x-show="loading" data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        <span x-text="loading ? 'Simulating...' : 'Run Simulation'"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            
+            <div x-show="results" x-transition.duration.500ms class="frosted-panel p-8 rounded-3xl border border-white/10 bg-[#0a0c10] relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] group-hover:bg-indigo-500/20 transition-all duration-1000"></div>
+                
+                <div class="relative z-10 flex justify-between items-start mb-8">
+                    <div>
+                        <h2 class="text-2xl font-black text-white italic tracking-tighter uppercase">Probability of Success</h2>
+                        <p class="text-slate-400 text-sm mt-1">Based on 1,000 Monte Carlo runs</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 tracking-tighter"
+                             x-text="results.success_probability + '%'"></div>
+                    </div>
+                </div>
+
+                <div class="w-full h-[350px] relative">
+                    <canvas id="simulationChart"></canvas>
+                </div>
+
+                <div class="mt-8 flex gap-4 relative z-10">
+                    <button @click="saveGoal" class="flex-1 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 rounded-xl font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save Goal
+                    </button>
+                </div>
+            </div>
+
+            <div class="frosted-panel p-6 rounded-3xl border border-white/10 bg-[#0a0c10]">
+                <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6">Tracked Goals</h3>
+                
+                <div class="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                    {% for goal in goals %}
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors flex justify-between items-center group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                                <i data-lucide="target" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm">{{ goal.name }}</h4>
+                                <p class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
+                                    Target: ₹{{ goal.target_amount|floatformat:0 }} by {{ goal.target_date }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="text-right hidden sm:block">
+                                <p class="text-[10px] text-slate-500 uppercase font-bold">Monthly Input</p>
+                                <p class="text-sm font-bold text-emerald-400">₹{{ goal.monthly_contribution|floatformat:0 }}</p>
+                            </div>
+                            <form method="POST" action="{% url 'dashboard:delete_goal' goal.id %}" onsubmit="return confirm('Delete this goal?');">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 hover:bg-red-500/20 text-slate-500 hover:text-red-400 rounded-lg transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-8 text-slate-500 text-sm">
+                        No financial goals tracked yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('goalSimulator', () => ({
+            form: {
+                name: '',
+                target_amount: 1000000,
+                current_savings: 0,
+                monthly_contribution: {{ default_contribution|default:5000 }},
+                step_up_percentage: 10,
+                target_date: ''
+            },
+            loading: false,
+            results: null,
+            chartInstance: null,
+
+            async runSimulation() {
+                if (!this.form.target_date) return alert('Please select a target date');
+                
+                this.loading = true;
+                const params = new URLSearchParams(this.form);
+
+                try {
+                    const response = await fetch(`calculate/?${params.toString()}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.results = data;
+                        this.$nextTick(() => {
+                            this.renderChart(data.chart_data);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Simulation failed:', error);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async saveGoal() {
+                try {
+                    const response = await fetch('save/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(this.form)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error saving goal: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Save failed');
+                }
+            },
+
+            renderChart(data) {
+                const ctx = document.getElementById('simulationChart').getContext('2d');
+                
+                if (this.chartInstance) {
+                    this.chartInstance.destroy();
+                }
+
+                const gradientOptimistic = ctx.createLinearGradient(0, 0, 0, 400);
+                gradientOptimistic.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                gradientOptimistic.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                const gradientMedian = ctx.createLinearGradient(0, 0, 0, 400);
+                gradientMedian.addColorStop(0, 'rgba(99, 102, 241, 0.2)');
+                gradientMedian.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: 'Optimistic (90th %)',
+                                data: data.optimistic,
+                                borderColor: '#10b981',
+                                backgroundColor: gradientOptimistic,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Median (50th %)',
+                                data: data.median,
+                                borderColor: '#6366f1',
+                                backgroundColor: gradientMedian,
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Pessimistic (10th %)',
+                                data: data.pessimistic,
+                                borderColor: '#f43f5e',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0.4,
+                                pointRadius: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { 
+                                    color: '#94a3b8', 
+                                    padding: 20,
+                                    font: { family: 'Plus Jakarta Sans', size: 10, weight: 'bold' } 
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Plus Jakarta Sans', size: 13 },
+                                padding: 12,
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#64748b', font: { size: 10 } }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { 
+                                    color: '#64748b', 
+                                    font: { size: 10 },
+                                    callback: (value) => '₹' + value.toLocaleString()
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }));
+    });
+
+    // Initialize Lucide Icons
+    window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>
+{% endblock %}

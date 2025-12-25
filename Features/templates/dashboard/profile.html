@@ -134,15 +134,15 @@
                     <div class="space-y-2">
                         <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Monthly Income</label>
                         <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
                             {{ form.monthly_income }}
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Current Balance</label>
+                        <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-emerald-500' : 'text-slate-500'">Initial Balance</label>
                         <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
                             {{ form.cash_balance }}
                         </div>
                     </div>
@@ -150,7 +150,7 @@
                     <div class="space-y-2">
                         <label class="text-xs font-bold uppercase tracking-widest transition-colors" :class="isEditing ? 'text-rose-500' : 'text-slate-500'">Total Liabilities</label>
                         <div class="relative" x-bind:class="!isEditing ? 'pointer-events-none opacity-75' : ''">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">₹</span>
                             {{ form.total_liabilities }}
                         </div>
                     </div>
