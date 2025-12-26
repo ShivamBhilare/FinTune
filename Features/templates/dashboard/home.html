@@ -216,14 +216,14 @@
             <div class="space-y-4">
                 {% for transaction in recent_transactions %}
                 <div class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer">
-                    <div class="w-10 h-10 rounded-full {% if transaction.is_income %}bg-emerald-500/20 text-emerald-500{% else %}bg-rose-500/20 text-rose-500{% endif %} flex items-center justify-center">
-                        {% if transaction.type == 'INCOME' %}
+                    <div class="w-10 h-10 rounded-full {% if transaction.transaction_type == 'INCOME' %}bg-emerald-500/20 text-emerald-500{% elif transaction.transaction_type == 'INVESTMENT' %}bg-blue-500/20 text-blue-500{% else %}bg-rose-500/20 text-rose-500{% endif %} flex items-center justify-center">
+                        {% if transaction.transaction_type == 'INCOME' %}
                             <i data-lucide="dollar-sign" class="w-5 h-5"></i>
-                        {% elif transaction.type == 'EXPENSE' %}
+                        {% elif transaction.transaction_type == 'EXPENSE' %}
                             <i data-lucide="shopping-bag" class="w-5 h-5"></i>
-                        {% elif transaction.type == 'INVESTMENT' %}
+                        {% elif transaction.transaction_type == 'INVESTMENT' %}
                             <i data-lucide="trending-up" class="w-5 h-5"></i>
-                        {% elif transaction.type == 'DEBT_PAYMENT' %}
+                        {% elif transaction.transaction_type == 'DEBT_PAYMENT' %}
                             <i data-lucide="credit-card" class="w-5 h-5"></i>
                         {% else %}
                             <i data-lucide="activity" class="w-5 h-5"></i>
@@ -233,7 +233,7 @@
                         <div class="text-sm font-bold text-white">{{ transaction.description }}</div>
                         <div class="text-xs text-slate-400 font-medium">{{ transaction.date|date:"M d, Y" }}</div>
                     </div>
-                    <div class="font-bold {% if transaction.transaction_type == 'INCOME' %}text-emerald-400{% else %}text-rose-400{% endif %}">
+                    <div class="font-bold {% if transaction.transaction_type == 'INCOME' %}text-emerald-400{% elif transaction.transaction_type == 'INVESTMENT' %}text-blue-400{% else %}text-rose-400{% endif %}">
                         {% if transaction.transaction_type == 'INCOME' %}+{% else %}-{% endif %}₹{{ transaction.amount|floatformat:2 }}
                     </div>
                 </div>
