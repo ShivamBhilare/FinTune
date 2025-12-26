@@ -34,10 +34,11 @@ def calculate_monthly_totals(user):
     
     total_income = profile_income + variable_income
 
-    # 2. Get Expenses for this month
+    # 2. Get All Outflows (Expenses + Investments) for this month
+    # We fetch EVERYTHING here, and then split them into Needs/Wants/Savings below.
     expenses = Transaction.objects.filter(
         user=user,
-        transaction_type='EXPENSE',
+        transaction_type__in=['EXPENSE', 'INVESTMENT'],
         date__range=(start_date, end_date)
     )
 
