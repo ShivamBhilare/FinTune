@@ -96,7 +96,7 @@ Create a `.env` file in the root directory to store your secrets.
 SECRET_KEY=your_django_secret_key
 DEBUG=True
 
-# Database (Optional, uses SQLite by default if empty)
+# Supabase (Optional, uses SQLite by default if empty)
 DATABASE_URL=postgres://user:password@localhost:5432/fintune_db
 
 # Google Gemini AI (Required for Voice/Image/Chatbot features)
@@ -120,7 +120,7 @@ GOOGLE_API_KEY=your_gemini_api_key_here
 ## 💻 Tech Stack
 
 *   **Backend:** Python, Django 5.2.8
-*   **Database:** PostgreSQL
+*   **Database:** PostgreSQL SupaBase
 *   **AI/ML:** Scikit-Learn, ARIMA Modeling, Google Gemini API (Generative AI)
 *   **Frontend:** HTML5, TailwindCSS, Alpine.js, Chart.js
 *   **Authentication:** Django Allauth
