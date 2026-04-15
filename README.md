@@ -35,7 +35,7 @@ FinTune is a next-generation personal finance application that blends advanced A
 <img src="static/dashboard.png" width="800" alt="Dashboard Overview">
 
 ### Budget Generator
-<img src="static/budgetgenerator.png" width="800" alt="Budget Generator">
+<img src="static/budget.png" width="800" alt="Budget Generator">
 
 ### Pattern Detection
 <img src="static/pattern.png" width="800" alt="Pattern Detection">
